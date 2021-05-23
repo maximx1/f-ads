@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/**/*.spec.js"
+    "test": "mocha --recursive test/",
+    "testdbg": "mocha --recursive --inspect-brk test/"
   },
   "repository": {
     "type": "git",

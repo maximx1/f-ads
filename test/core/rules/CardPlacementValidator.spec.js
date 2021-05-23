@@ -9,25 +9,25 @@ describe('Adjacent cards determinator', () => {
         it('should return true if 2 numbers are next to each other', () => {
             const card1 = new Card(1, CardSuit.SPADES),
                 card2 = new Card(2, CardSuit.HEARTS);
-            expect(validator.cardsAreAdjacentNumber(card1, card2)).to.equal(true);
+            expect(validator.cardsAreAdjacentNumber(card1, card2)).to.be.true;
         });
 
         it('should return false if 2 numbers are not next to each other', () => {
             const card1 = new Card(1, CardSuit.SPADES),
                 card2 = new Card(3, CardSuit.HEARTS);
-            expect(validator.cardsAreAdjacentNumber(card1, card2)).to.equal(false);
+            expect(validator.cardsAreAdjacentNumber(card1, card2)).to.be.false;
         });
 
         it('should return true if 1 card is A and the other is K and wrap is enabled', () => {
             const card1 = new Card(1, CardSuit.SPADES),
                 card2 = new Card(13, CardSuit.HEARTS);
-            expect(validator.cardsAreAdjacentNumber(card1, card2, true)).to.equal(true);
+            expect(validator.cardsAreAdjacentNumber(card1, card2, true)).to.be.true;
         });
 
         it('should return false if 1 card is A and the other is K but wrap is not enabled', () => {
             const card1 = new Card(1, CardSuit.SPADES),
                 card2 = new Card(13, CardSuit.HEARTS);
-            expect(validator.cardsAreAdjacentNumber(card1, card2, false)).to.equal(false);
+            expect(validator.cardsAreAdjacentNumber(card1, card2, false)).to.be.false;
         });
     });
 
@@ -41,63 +41,61 @@ describe('Adjacent cards determinator', () => {
             diamondsCard = new Card(4, CardSuit.DIAMONDS);
 
         describe('Alternating suits', () => {
-            
-
             it('should return true for red on black', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, spadesCard, true)).to.equal(true);
-                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, clubsCard, true)).to.equal(true);
-                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, spadesCard, true)).to.equal(true);
-                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, clubsCard, true)).to.equal(true);
+                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, spadesCard, true)).to.be.true;
+                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, clubsCard, true)).to.be.true;
+                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, spadesCard, true)).to.be.true;
+                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, clubsCard, true)).to.be.true;
             });
 
             it('should return true for black on red', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, heartsCard, true)).to.equal(true);
-                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, diamondsCard, true)).to.equal(true);
-                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, heartsCard, true)).to.equal(true);
-                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, diamondsCard, true)).to.equal(true);
+                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, heartsCard, true)).to.be.true;
+                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, diamondsCard, true)).to.be.true;
+                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, heartsCard, true)).to.be.true;
+                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, diamondsCard, true)).to.be.true;
             });
 
             it('should return false for black on black', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, spadesCard, true)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, clubsCard, true)).to.equal(false);
+                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, spadesCard, true)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, clubsCard, true)).to.be.false;
             });
 
             it('should return false for red on red', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, diamondsCard, true)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, heartsCard, true)).to.equal(false);
+                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, diamondsCard, true)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, heartsCard, true)).to.be.false;
             });
 
             it('should return false if either card is invalid', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit()).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(null, spadesCard)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, new Card(-1, -1))).to.equal(false);
+                expect(validator.cardsAreAdjacentBasedOnSuit()).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(null, spadesCard)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, new Card(-1, -1))).to.be.false;
             });
         });
 
         describe('Non-alternating suits', () => {
             it('should return false for red on black', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, spadesCard, false)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, clubsCard, false)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, spadesCard, false)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, clubsCard, false)).to.equal(false);
+                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, spadesCard, false)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, clubsCard, false)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, spadesCard, false)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, clubsCard, false)).to.be.false;
             });
 
             it('should return false for black on red', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, heartsCard, false)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, diamondsCard, false)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, heartsCard, false)).to.equal(false);
-                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, diamondsCard, false)).to.equal(false);
+                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, heartsCard, false)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, diamondsCard, false)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, heartsCard, false)).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, diamondsCard, false)).to.be.false;
             });
 
             it('should return true for black on black', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, spadesCard, false)).to.equal(true);
-                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, clubsCard, false)).to.equal(true);
+                expect(validator.cardsAreAdjacentBasedOnSuit(clubsCard, spadesCard, false)).to.be.true;
+                expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, clubsCard, false)).to.be.true;
             });
 
             it('should return true for red on red', () => {
-                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, diamondsCard, false)).to.equal(true);
-                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, heartsCard, false)).to.equal(true);
+                expect(validator.cardsAreAdjacentBasedOnSuit(heartsCard, diamondsCard, false)).to.be.true;
+                expect(validator.cardsAreAdjacentBasedOnSuit(diamondsCard, heartsCard, false)).to.be.true;
             });
         });
     });
