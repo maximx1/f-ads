@@ -79,6 +79,11 @@ describe('Stack', () => {
 
     describe('#take', () => {
         it('should return n items from the top of the stack as a list', () => {
+            const stack = new Stack(1, 2, 3, 4);
+            expect(stack.take(2)).to.eql([3, 4]);
+        });
+
+        it('should reduce the size of the stack', () => {
             const stack = new Stack(1, 2, 3, 4),
                 taken = stack.take(2);
 
@@ -136,6 +141,28 @@ describe('Stack', () => {
         it('should return null if stack is empty', () => {
             const stack = new Stack();
             expect(stack.peek()).to.be.null;
+        });
+    });
+
+    describe('#peekMany', () => {
+        it('should return n items from the top of the stack as a list', () => {
+            const stack = new Stack(1, 2, 3, 4);
+            expect(stack.peekMany(2)).to.eql([3, 4]);
+        });
+
+        it('should not reduce the size of the stack', () => {
+            const stack = new Stack(1, 2, 3, 4),
+                peeked = stack.peekMany(2);
+
+            expect(stack.items).to.eql([1, 2, 3, 4]);
+            expect(peeked).to.eql([3, 4]);
+        });
+
+        it('should return null when trying to peek more than the stack has in it', () => {
+            const stack = new Stack(1, 2);
+            expect(stack.peekMany(3)).to.be.null;
+            expect((new Stack()).peekMany(3)).to.be.null;
+            
         });
     });
 

@@ -22,6 +22,11 @@ export class Stack {
         return this.items.slice(-1)[0];
     }
 
+    peekMany(n) {
+        if(this.size() < n) return null;
+        return this.items.slice(-1 * n);
+    }
+
     isEmpty() {
         return this.items.length === 0;
     }
