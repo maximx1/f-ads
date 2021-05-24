@@ -12,6 +12,11 @@ export class Stack {
         return this.items.pop();
     }
 
+    take(n) {
+        if(this.size() < n) return null;
+        return this.items.splice(-1 * n);
+    }
+
     peek() {
         if(this.isEmpty()) return null;
         return this.items.slice(-1)[0];

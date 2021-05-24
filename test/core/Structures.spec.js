@@ -77,6 +77,23 @@ describe('Stack', () => {
         });
     });
 
+    describe('#take', () => {
+        it('should return n items from the top of the stack as a list', () => {
+            const stack = new Stack(1, 2, 3, 4),
+                taken = stack.take(2);
+
+            expect(stack.items).to.eql([1, 2]);
+            expect(taken).to.eql([3, 4]);
+        });
+
+        it('should return null when trying to take more than the stack has in it', () => {
+            const stack = new Stack(1, 2);
+            expect(stack.take(3)).to.be.null;
+            expect((new Stack()).take(3)).to.be.null;
+            
+        });
+    });
+
     describe('#isEmpty', () => {
         it('should be empty if it doesn\'t have items in it.', () => {
             const stack = new Stack();
