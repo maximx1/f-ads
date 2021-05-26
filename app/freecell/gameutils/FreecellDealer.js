@@ -1,6 +1,6 @@
 import DealerBase from "../../core/gameutils/DealerBase.js"
 
-export default class Dealer extends DealerBase {
+export default class FreecellDealer extends DealerBase {
     constructor() {
         super();
     }
