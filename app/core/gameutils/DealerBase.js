@@ -5,7 +5,7 @@ export default class DealerBase {
         this.deck = this.getFreshDeck();
     }
 
-    shuffle(playField) { }
+    deal(playField) { }
 
     shuffleCards() {
         let currentIndex = this.deck.length;

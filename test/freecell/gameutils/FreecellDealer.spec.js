@@ -6,7 +6,7 @@ import { Field } from '../../../app/freecell/gameutils/Field.js';
 
 describe('Freecell Dealer', () => {
     it('should be able to deal the deck to a freecell field', () => {
-        const dealer = new Dealer(),
+        const dealer = new FreecellDealer(),
             field = new Field(),
             assertFieldColumn = (column, expectedCardNumbers, expectedSuits) => {
                 expect(column.items.map(card => card.number)).to.eql(expectedCardNumbers);
@@ -51,5 +51,15 @@ describe('Freecell Dealer', () => {
             [8, 3, 11, 8, 13, 5],
             [spades, diamonds, diamonds, clubs, hearts, hearts]
         );
+    });
+
+    it('should not populate any of the freecells when dealing', () => {
+        const dealer = new FreecellDealer(),
+            field = new Field();
+
+        dealer.shuffleCards();
+        dealer.deal(field);
+
+        expect(field.freeCells).to.eql([null, null, null, null]);
     });
 });
