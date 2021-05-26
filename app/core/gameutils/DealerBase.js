@@ -1,9 +1,11 @@
 import { Card, CardSuit } from "../Entities/Card/Card";
 
-export default class Dealer {
+export default class DealerBase {
     constructor() {
         this.deck = this.getFreshDeck();
     }
+
+    shuffle(playField) { }
 
     shuffleCards() {
         let currentIndex = this.deck.length;

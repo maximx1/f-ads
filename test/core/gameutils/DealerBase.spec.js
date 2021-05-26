@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { Card, CardSuit } from '../../../app/core/Entities/Card/Card';
-import Dealer from '../../../app/core/gameutils/Dealer';
+import DealerBase from '../../../app/core/gameutils/DealerBase.js';
 
 describe('Dealer', () => {
     it('should be initialized with a brand new kissing king deck', () => {
-        const dealer = new Dealer(),
+        const dealer = new DealerBase(),
             cardNumbers = dealer.deck.map(card => card.number),
             cardSuits = dealer.deck.map(card => card.suit);
 
@@ -30,7 +30,7 @@ describe('Dealer', () => {
     });
 
     it('should be able to shuffle its deck', () => {
-        const dealer = new Dealer(),
+        const dealer = new DealerBase(),
             originalDeck = dealer.deck.slice();
 
         dealer.shuffleCards();
