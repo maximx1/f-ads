@@ -28,4 +28,14 @@ describe('Dealer', () => {
             hearts, hearts, hearts, hearts, hearts, hearts, hearts, hearts, hearts, hearts, hearts, hearts, hearts
         ]);
     });
+
+    it('should be able to shuffle its deck', () => {
+        const dealer = new Dealer(),
+            originalDeck = dealer.deck.slice();
+
+        dealer.shuffleCards();
+        expect(dealer.deck).to.not.eql(originalDeck);
+        expect(dealer.deck).to.have.lengthOf(52);
+        expect(dealer.deck).to.have.members(originalDeck);
+    });
 });

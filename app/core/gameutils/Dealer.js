@@ -5,6 +5,17 @@ export default class Dealer {
         this.deck = this.getFreshDeck();
     }
 
+    shuffleCards() {
+        let currentIndex = this.deck.length;
+
+        while(0 !== currentIndex) {
+            const randomIndex = Math.floor(Math.random() * currentIndex),
+                tmp = this.deck[--currentIndex];
+            this.deck[currentIndex] = this.deck[randomIndex];
+            this.deck[randomIndex] = tmp;
+        }
+    }
+
     getFreshDeck() {
         return this.getFreshKissingKingDeck();
     }
