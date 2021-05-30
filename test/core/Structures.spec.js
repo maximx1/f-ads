@@ -166,6 +166,23 @@ describe('Stack', () => {
         });
     });
 
+    describe('#peekAll', () => {
+        it('should return all the items from the stack as a list', () => {
+            const stack = new Stack(1, 2, 3, 4),
+                peeked = stack.peekAll();
+
+            expect(stack.items).to.eql([1, 2, 3, 4]);
+            expect(peeked).to.eql([1, 2, 3, 4]);
+        });
+
+        it('should return no items from the stack if there are no items', () => {
+            const stack = new Stack();
+
+            expect(stack.items).to.be.empty;
+            expect(peeked).to.be.empty;
+        });
+    });
+
     describe('#clone', () => {
         it('should return a new stack with a shallow copy of the stack\'s items', () => {
             const stack = new Stack(1, 2, 3, 4),

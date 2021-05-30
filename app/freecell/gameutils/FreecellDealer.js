@@ -9,7 +9,7 @@ export default class FreecellDealer extends DealerBase {
         this.deck.forEach((card, index) => {
             const stackNumber = index % 8;
             
-            playField.columns[stackNumber].push(card);
+            playField.tableau[stackNumber].push(card);
         });
     }
 }

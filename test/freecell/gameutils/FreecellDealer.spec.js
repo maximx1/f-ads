@@ -19,35 +19,35 @@ describe('Freecell Dealer', () => {
 
         dealer.deal(field);
 
-        assertFieldColumn(field.columns[0],
+        assertFieldColumn(field.tableau[0],
             [1, 9, 4, 12, 7, 12, 4],
             [spades, spades, diamonds, diamonds, clubs, hearts, hearts]
         );
-        assertFieldColumn(field.columns[1],
+        assertFieldColumn(field.tableau[1],
             [2, 10, 5, 13, 6, 11, 3],
             [spades, spades, diamonds, diamonds, clubs, hearts, hearts]
         );
-        assertFieldColumn(field.columns[2],
+        assertFieldColumn(field.tableau[2],
             [3, 11, 6, 13, 5, 10, 2],
             [spades, spades, diamonds, clubs, clubs, hearts, hearts]
         );
-        assertFieldColumn(field.columns[3],
+        assertFieldColumn(field.tableau[3],
             [4, 12, 7, 12, 4, 9, 1],
             [spades, spades, diamonds, clubs, clubs, hearts, hearts]
         );
-        assertFieldColumn(field.columns[4],
+        assertFieldColumn(field.tableau[4],
             [5, 13, 8, 11, 3, 8],
             [spades, spades, diamonds, clubs, clubs, hearts]
         );
-        assertFieldColumn(field.columns[5],
+        assertFieldColumn(field.tableau[5],
             [6, 1, 9, 10, 2, 7],
             [spades, diamonds, diamonds, clubs, clubs, hearts]
         );
-        assertFieldColumn(field.columns[6],
+        assertFieldColumn(field.tableau[6],
             [7, 2, 10, 9, 1, 6],
             [spades, diamonds, diamonds, clubs, clubs, hearts]
         );
-        assertFieldColumn(field.columns[7],
+        assertFieldColumn(field.tableau[7],
             [8, 3, 11, 8, 13, 5],
             [spades, diamonds, diamonds, clubs, hearts, hearts]
         );
@@ -62,4 +62,5 @@ describe('Freecell Dealer', () => {
 
         expect(field.freeCells).to.eql([null, null, null, null]);
     });
+
 });

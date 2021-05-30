@@ -27,6 +27,10 @@ export class Stack {
         return this.items.slice(-1 * n);
     }
 
+    peekAll() {
+        return this.items.slice();
+    }
+
     isEmpty() {
         return this.items.length === 0;
     }
