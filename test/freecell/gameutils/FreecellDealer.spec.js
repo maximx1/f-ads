@@ -60,7 +60,7 @@ describe('Freecell Dealer', () => {
         dealer.shuffleCards();
         dealer.deal(field);
 
-        expect(field.freeCells).to.eql([null, null, null, null]);
+        expect(field.freeCells.map(freeCell => freeCell.isFree())).to.eql([true, true, true, true]);
     });
 
 });

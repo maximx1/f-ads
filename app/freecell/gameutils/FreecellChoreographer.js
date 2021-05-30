@@ -43,11 +43,32 @@ export default class FreecellChoreographer {
     }
 
     getColumnYLocation() {
-        return this.verticalPadding + this.cardHeight + this.gutterSpace;
+        return this.getFreecellYLocation() + this.cardHeight + this.gutterSpace;
+    }
+
+    getFreecellYLocation() {
+        return this.verticalPadding;
     }
 
     updateActors(field) {
         this.updateTableauActors(field);
+        this.updateFreecellActors(field);
+    }
+
+    updateFreecellActors(field) {
+        const freeCellYPosition = this.getFreecellYLocation();
+
+        field.freeCells.forEach((freeCell, index) => {
+            const freecellXPosition = this.getColumnXLocation(index);
+            freeCell.getActiveActors().forEach(actor => {
+                {
+                    actor.pos.x = freecellXPosition;
+                    actor.pos.y = freeCellYPosition;;
+                    actor.width = this.cardWidth;
+                    actor.height = this.cardHeight;
+                }
+            }, this);
+        }, this);
     }
 
     updateTableauActors(field) {

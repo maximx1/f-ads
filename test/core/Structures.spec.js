@@ -176,7 +176,8 @@ describe('Stack', () => {
         });
 
         it('should return no items from the stack if there are no items', () => {
-            const stack = new Stack();
+            const stack = new Stack(),
+                peeked = stack.peekAll()
 
             expect(stack.items).to.be.empty;
             expect(peeked).to.be.empty;

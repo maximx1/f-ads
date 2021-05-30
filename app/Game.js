@@ -1,5 +1,4 @@
 import { CollisionType, Color, Engine } from 'excalibur';
-import CardActor from './core/actors/CardActor'
 import FreecellGame from './freecell/FreecellGame';
 
 const engine = new Engine({
@@ -16,5 +15,3 @@ freecellGame.startNewGame();
 // engine.input.pointers.primary.on('move', function (evt) {
 //     paddle.pos.x = evt.target.lastWorldPos.x
 // });
-
-
