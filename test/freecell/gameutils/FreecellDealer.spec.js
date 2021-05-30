@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { CardSuit } from '../../../app/core/Entities/Card/Card.js';
+import { CardSuit } from '../../../app/core/entities/card/Card.js';
 import FreecellDealer from '../../../app/freecell/gameutils/FreecellDealer.js';
 import { Field } from '../../../app/freecell/gameutils/Field.js';
 
