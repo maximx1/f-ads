@@ -2,6 +2,7 @@ export class Card {
     constructor(number, suit) {
         this.number = number;
         this.suit = suit;
+        this.actors = null;
     }
 
     isValidCard() {
