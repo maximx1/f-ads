@@ -1,4 +1,4 @@
-import { Card, CardSuit } from "../Entities/Card/Card";
+import { Card, CardSuit } from "../entities/card/Card";
 
 export default class DealerBase {
     constructor() {

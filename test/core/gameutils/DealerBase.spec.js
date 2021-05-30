@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Card, CardSuit } from '../../../app/core/Entities/Card/Card';
+import { Card, CardSuit } from '../../../app/core/entities/card/Card';
 import DealerBase from '../../../app/core/gameutils/DealerBase.js';
 
 describe('Dealer', () => {
