@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "nyc --reporter=text mocha --recursive test/",
+    "test": "nyc mocha --recursive test/",
     "testdbg": "mocha --recursive --inspect-brk test/",
     "webpack": "webpack",
     "dev": "webpack serve --config webpack.development.js",
