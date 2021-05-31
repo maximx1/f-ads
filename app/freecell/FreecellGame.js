@@ -20,6 +20,7 @@ export default class FreecellGame {
         //This should be thrown into a scene sometime.
         this.actors = field.tableau.map(column => column.peekAll()).flat().map(card => new CardActor(card), this);
         this.actors.push(...field.freeCells.map(freeCell => new EmptyCardSlotActor(freeCell)));
+        this.actors.push(...field.foundations.map(foundation => new EmptyCardSlotActor(foundation)));
     }
 
     runGame(field) {
