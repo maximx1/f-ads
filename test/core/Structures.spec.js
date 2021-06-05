@@ -4,7 +4,7 @@ import { Stack } from '../../app/core/Structures.js';
 describe('Stack', () => {
     describe('initialization', () => {
         it('should be able to be initialized empty', () => {
-            const stack = new Stack();
+            const stack = new Stack(undefined);
             expect(stack.isEmpty()).to.be.true;
         });
 

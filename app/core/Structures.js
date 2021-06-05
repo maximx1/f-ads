@@ -1,6 +1,6 @@
 export class Stack {
     constructor(...initialList) {
-        this.items = initialList != null ? [...initialList.filter((i) => i != null)] : [];
+        this.items = [...initialList.filter((i) => i != null)];
     }
 
     push(...newItems) {
