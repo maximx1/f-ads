@@ -38,4 +38,45 @@ describe('Dealer', () => {
         expect(dealer.deck).to.have.lengthOf(52);
         expect(dealer.deck).to.have.members(originalDeck);
     });
+
+    describe('should be able to get cards from each suit in their kissing king order', () => {
+        const dealer = new DealerBase(),
+            expectedSpadeAndDiamondNumberOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+            expectedClubsAndHeartsNumberOrder = [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
+        it('spades:', () => {
+            const cards = dealer.getCardsFromSuit(CardSuit.SPADES);
+
+            expect(cards.filter(card => card.suit != CardSuit.SPADES)).to.be.an('array').that.is.empty;
+            expect(cards.map(card => card.number)).to.eql(expectedSpadeAndDiamondNumberOrder);
+        });
+
+        it('diamonds:', () => {
+            const cards = dealer.getCardsFromSuit(CardSuit.DIAMONDS);
+
+            expect(cards.filter(card => card.suit != CardSuit.DIAMONDS)).to.be.an('array').that.is.empty;
+            expect(cards.map(card => card.number)).to.eql(expectedSpadeAndDiamondNumberOrder);
+        });
+
+        it('clubs:', () => {
+            const cards = dealer.getCardsFromSuit(CardSuit.CLUBS);
+
+            expect(cards.filter(card => card.suit != CardSuit.CLUBS)).to.be.an('array').that.is.empty;
+            expect(cards.map(card => card.number)).to.eql(expectedClubsAndHeartsNumberOrder);
+        });
+
+        it('hearts:', () => {
+            const cards = dealer.getCardsFromSuit(CardSuit.HEARTS);
+
+            expect(cards.filter(card => card.suit != CardSuit.HEARTS)).to.be.an('array').that.is.empty;
+            expect(cards.map(card => card.number)).to.eql(expectedClubsAndHeartsNumberOrder);
+        });
+
+        it('should return null should an invalid suit be passed in', () => {
+            expect(dealer.getCardsFromSuit(-1)).to.be.null;
+            expect(dealer.getCardsFromSuit()).to.be.null;
+            expect(dealer.getCardsFromSuit(null)).to.be.null;
+        });
+    });
+
 });
