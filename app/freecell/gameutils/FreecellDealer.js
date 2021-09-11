@@ -6,6 +6,7 @@ export default class FreecellDealer extends DealerBase {
     }
 
     deal(playField) {
+        super.deal(playField);
         this.deck.forEach((card, index) => {
             const stackNumber = index % 8;
             

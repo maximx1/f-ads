@@ -3,6 +3,8 @@
     "reporter": "text",
     "exclude": [
         "**/webpack*",
-        "**/*.spec.js"
+        "**/*.spec.js",
+        "app/Game.js",
+        "coverage/"
     ]
 }
