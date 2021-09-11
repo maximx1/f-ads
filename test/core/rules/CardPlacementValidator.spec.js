@@ -29,6 +29,15 @@ describe('Adjacent cards determinator', () => {
                 card2 = new Card(13, CardSuit.HEARTS);
             expect(validator.cardsAreAdjacentNumber(card1, card2, false)).to.be.false;
         });
+
+        it('should return false if either card is invalid', () => {
+            const card = new Card(1, CardSuit.SPADES);
+            expect(validator.cardsAreAdjacentNumber()).to.be.false;
+            expect(validator.cardsAreAdjacentNumber(card)).to.be.false;
+            expect(validator.cardsAreAdjacentNumber(null, card)).to.be.false;
+            expect(validator.cardsAreAdjacentNumber(card, new Card(-1, -1))).to.be.false;
+            expect(validator.cardsAreAdjacentNumber(new Card(-1, -1), card)).to.be.false;
+        });
     });
 
     describe('Adjacent by suit', () => {
@@ -70,6 +79,7 @@ describe('Adjacent cards determinator', () => {
                 expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard)).to.be.false;
                 expect(validator.cardsAreAdjacentBasedOnSuit(null, spadesCard)).to.be.false;
                 expect(validator.cardsAreAdjacentBasedOnSuit(spadesCard, new Card(-1, -1))).to.be.false;
+                expect(validator.cardsAreAdjacentBasedOnSuit(new Card(-1, -1), spadesCard)).to.be.false;
             });
         });
 
@@ -101,6 +111,20 @@ describe('Adjacent cards determinator', () => {
     });
 
     describe('#isCardPlaceableOnOtherCard', () => {
+        describe('default values', () => {
+            const runTestCase = (c1Number, c1Suit, c2Number, c2Suit, result) => {
+                const cardToPlace = new Card(c1Number, c1Suit),
+                    cardToPlaceUpon = new Card(c2Number, c2Suit);
+
+                expect(validator.isCardPlaceableOnOtherCard(cardToPlace, cardToPlaceUpon)).to.equal(result);
+            };
+
+            it('should default to descending and alternating suits if neither param is passed in', () => {
+                runTestCase(12, CardSuit.SPADES, 13, CardSuit.DIAMONDS, true);
+                runTestCase(13, CardSuit.SPADES, 13, CardSuit.DIAMONDS, false);
+            });
+        });
+
         describe('Descending', () => {
             describe('Alternating suits', () => {
                 const runTestCase = (c1Number, c1Suit, c2Number, c2Suit, result) => {
