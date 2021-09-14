@@ -98,6 +98,7 @@ export default class FreecellChoreographer {
                     actor.pos.y = columnYPosition + this.cardHeight / 2 * cardIndex;
                     actor.width = this.cardWidth;
                     actor.height = this.cardHeight;
+                    actor.resources = this.resources;
                 }, this);
             }, this);
         }, this);

@@ -1,4 +1,4 @@
-import { Actor, Color } from 'excalibur';
+import { Actor, Color, Vector } from 'excalibur';
 
 export default class CardActor extends Actor {
     constructor(card) {
@@ -11,5 +11,11 @@ export default class CardActor extends Actor {
 
     initializeVisualConfig() {
         this.color = Color.Chartreuse;
+    }
+
+    onInitialize(engine) {
+        const cardBackSprite = this.resources.cardBack.asSprite();
+        cardBackSprite.scale = new Vector(this.width / cardBackSprite.width, this.height / cardBackSprite.height);
+        this.addDrawing('back', cardBackSprite);
     }
 }

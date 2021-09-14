@@ -5,8 +5,9 @@ import FreecellChoreographer from './gameutils/FreecellChoreographer';
 import EmptyCardSlotActor from '../core/actors/EmptyCardSlotActor';
 
 export default class FreecellGame {
-    constructor(engine) {
+    constructor(engine, resources) {
         this.engine = engine;
+        this.resources = resources;
         this.dealer = new FreecellDealer();
     }
 
@@ -25,11 +26,11 @@ export default class FreecellGame {
 
     runGame(field) {
         const choreographer = new FreecellChoreographer(this.engine);
+        choreographer.resources = this.resources;
         choreographer.scalePlayArea();
         
         this.castActors(field);
         choreographer.updateActors(field);
-
         this.actors.forEach(a => this.engine.add(a), this);
     }
 }

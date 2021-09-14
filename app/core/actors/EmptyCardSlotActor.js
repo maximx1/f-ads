@@ -11,6 +11,6 @@ export default class EmptyCardSlotActor extends Actor {
     }
 
     initializeVisualConfig() {
-        this.color = Color.Vermillion
+        this.color = Color.Vermilion
     }
 }

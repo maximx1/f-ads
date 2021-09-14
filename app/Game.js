@@ -1,17 +1,17 @@
-import { CollisionType, Color, Engine } from 'excalibur';
+import { Color, Engine } from 'excalibur';
+import ResourceManager from './core/gameutils/ResourceManager';
 import FreecellGame from './freecell/FreecellGame';
 
 const engine = new Engine({
     backgroundColor: Color.Black
 });
 
-engine.start();
-//paddle.body.collider.type = CollisionType.Fixed
+//TODO: These should be loaded in a scene but, for the moment we only have freecell.
+const resourceManager = new ResourceManager();
+resourceManager.setUpResources();
 
-const freecellGame = new FreecellGame(engine);
+engine.start(resourceManager.loader).then(() => {
+    const freecellGame = new FreecellGame(engine, resourceManager.resources);
 
-freecellGame.startNewGame();
-
-// engine.input.pointers.primary.on('move', function (evt) {
-//     paddle.pos.x = evt.target.lastWorldPos.x
-// });
+    freecellGame.startNewGame();
+});
