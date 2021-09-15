@@ -14,7 +14,7 @@ export default class CardActor extends Actor {
     }
 
     onInitialize(engine) {
-        const cardBackSprite = this.resources.cardBack.asSprite();
+        const cardBackSprite = this.resources.aceOfSpades.asSprite();
         cardBackSprite.scale = new Vector(this.width / cardBackSprite.width, this.height / cardBackSprite.height);
         this.addDrawing('back', cardBackSprite);
     }
