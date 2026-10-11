@@ -105,8 +105,7 @@ Effort unit: one session is about 3 hours.
 ### Phase 2: Kotlin skeleton and CI (2-3 sessions)
 1. Create the KMP project: modules `:core` (targets Android + JVM) and `:androidApp`. Leave iOS out for now (it needs
    Xcode and slows CI) but keep `core` free of Android and JVM-only APIs so adding it later is mechanical.
-2. `compileSdk` and `targetSdk` 36. minSdk 26 unless you want older phones supported (your call; say what phone you
-   have).
+2. `compileSdk` and `targetSdk` 36. minSdk 26 (your Pixel 9 Pro is the main test device).
 3. Spotless + ktlint, detekt, Kover coverage, all in `./gradlew check`.
 4. GitHub Actions CI: `./gradlew check :androidApp:assembleDebug` on every PR and on `main`.
 5. A blank Compose screen running on your phone and a tablet/foldable emulator (Android 16 removes orientation locks on
@@ -148,7 +147,9 @@ limits, or $99/year for the App Store/TestFlight); desktop and web targets; Micr
 
 ## Remaining open questions
 
-1. What phone (and Android version) do you use? That sets minSdk and the test device.
+1. ~~Phone~~ Answered: Pixel 9 Pro (shipped with Android 15, can run 16). It is the primary test device, so no
+   need to support old phones: minSdk 26 is a safe floor, higher is fine. It is a large-screen foldable-class
+   display, so also test landscape and a tablet emulator.
 2. Applicationid: e.g. `com.maximx1.fads`. Permanent once published, so worth a quick decision, though it doesn't
    matter while sideloading.
 3. Rules scope: standard 4 free cells only, for now? (Recommended: yes.)
