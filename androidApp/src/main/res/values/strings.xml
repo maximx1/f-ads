@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Fuck Ads</string>
+
+    <string name="game_number">Game #%1$d</string>
+    <string name="undo">Undo</string>
+    <string name="restart">Restart</string>
+    <string name="new_game">New</string>
+
+    <string name="new_game_title">New game</string>
+    <string name="deal_number_label">Deal number</string>
+    <string name="deal">Deal</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="restart_title">Restart this deal?</string>
+    <!-- The numbers in these two are deal numbers, not quantities, so plurals do not apply. -->
+    <string name="restart_text" tools:ignore="PluralsCandidate">Your moves on deal #%1$d will be cleared.</string>
+
+    <string name="win_title">You won!</string>
+    <string name="win_text" tools:ignore="PluralsCandidate">Deal #%1$d solved. Moves: %2$d.</string>
+    <string name="win_new_game">New game</string>
+    <string name="close">Close</string>
+</resources>

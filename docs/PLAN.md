@@ -1,6 +1,6 @@
 # Fuck Ads: plan
 
-*Updated 2026-10-10 after the owner's decisions. Background research (audit of the 2021 prototype, full stack
+*Updated 2026-10-11: Phases 2 to 4 built. The game is playable. Background research (audit of the 2021 prototype, full stack
 comparison, verified 2026 platform facts) is in [ASSESSMENT.md](ASSESSMENT.md). Feature work has not started.*
 
 ## Decisions
@@ -92,33 +92,78 @@ future hints for free.
 Effort unit: one session is about 3 hours.
 
 ### Phase 0: You (no code)
-- Install Android Studio (it bundles the JDK). Enable developer mode and USB debugging on your phone.
+- ~~Install Android Studio (it bundles the JDK).~~ Done 2026-10-11 (Android Studio 2026.2, JDK 25, Android 17 SDK,
+  a Pixel 9 Pro emulator).
+- Still to do: enable developer mode and USB debugging on your phone.
 - Nothing else is required: no Play account, no fee, no identity check, to run on your own phone.
 
-### Phase 1: Repo reset (done on branch `cleanup/repo-reset`, awaiting your merge)
-- Legacy code preserved at tag `legacy-web-excalibur-2021` and pushed. Working tree contains only README, LICENSE,
-  docs, `.gitignore`, `.editorconfig`.
-- Still to do on GitHub when you're ready: merge this branch to `main`, make `main` the default branch, delete
-  `develop`/`3-card-styling` if you like (the tag keeps the code), and close the 12 stale 2021 issues (most are
-  Excalibur-specific; #24-#26 are superseded by this plan).
+### Phase 1: Repo reset (done, on `main`)
+- Legacy code preserved at tag `legacy-web-excalibur-2021` and pushed. `main` has the reset tree.
+- Still to do on GitHub: make `main` the default branch (it is still `develop`), delete `develop`/`3-card-styling`
+  if you like (the tag keeps the code), and close the 14 stale 2021 issues (most are Excalibur-specific; #24-#26
+  are superseded by this plan).
 
-### Phase 2: Kotlin skeleton and CI (2-3 sessions)
-1. Create the KMP project: modules `:core` (targets Android + JVM) and `:androidApp`. Leave iOS out for now (it needs
-   Xcode and slows CI) but keep `core` free of Android and JVM-only APIs so adding it later is mechanical.
-2. `compileSdk` and `targetSdk` 36. minSdk 26 (your Pixel 9 Pro is the main test device).
-3. Spotless + ktlint, detekt, Kover coverage, all in `./gradlew check`.
-4. GitHub Actions CI: `./gradlew check :androidApp:assembleDebug` on every PR and on `main`.
-5. A blank Compose screen running on your phone and a tablet/foldable emulator (Android 16 removes orientation locks on
-   large screens, so landscape and tablets must work from the start).
+### Phase 2: Kotlin skeleton and CI (built 2026-10-11 on branch `2-kotlin-skeleton-ci`)
+1. Done: KMP project with modules `:core` (targets Android + JVM) and `:androidApp`. iOS is left out for now (it
+   needs Xcode and slows CI); `core` stays free of Android and JVM-only APIs so adding it later is mechanical.
+2. Done, with one change: `compileSdk` and `targetSdk` are **37** (Android 17), not 36, because that is the SDK
+   Android Studio 2026.2 installs and what its new-project wizard targets. minSdk 26. Application id
+   `com.maximx1.fads` (open question 2; easy to change until something is published).
+3. Done: Spotless + ktlint, detekt, Android lint, tests and a Kover gate (90% line coverage on `core`), all in
+   `./gradlew check`. Each gate was confirmed to fail the build on bad input.
+4. Written, not yet run: GitHub Actions CI (`./gradlew check :androidApp:assembleDebug` on every PR and on `main`).
+   It runs for the first time when the branch is pushed.
+5. Done on the emulator: the blank screen runs on the Pixel 9 Pro emulator (Android 17) in portrait and landscape,
+   and at a tablet-sized display. Not yet done: your real phone.
 
-### Phase 3: Rules engine in `:core` (4-6 sessions)
+Versions (all in `gradle/libs.versions.toml`): Gradle 9.8.1, Android Gradle Plugin 9.4.1, Kotlin 2.4.21, Compose BOM
+2026.09.00. Known follow-ups: detekt 1.23.8 uses APIs Gradle 10 removes, so move to detekt 2 when it leaves alpha.
+The suit symbols draw as colour emoji on the emulator, which the bundled font in Phase 4 fixes.
+
+### Phase 3: Rules engine in `:core` (built 2026-10-11)
+Status: done. 54 tests, 100% line coverage of `core`. What was built, where it differs from or pins down the
+text below:
+- Deals use SplitMix64 seeded with the deal number (0 and up, any `Long`) and a Fisher-Yates shuffle of the deck in
+  the order spades, hearts, diamonds, clubs, ace to king. The exact steps are documented on `Deal`. Fixtures for
+  deals 0, 1, 2, 1,000,000, 2^31-1 and 2^63-1 were produced by a second, separate implementation and both agree.
+- Moves: `ColumnToColumn(from, to, count)`, `ColumnToFreeCell`, `ColumnToFoundation`, `FreeCellToColumn`,
+  `FreeCellToFoundation`. The API is `state.canMove(move)`, `state.legalMoves()`, `state.play(move)`,
+  `state.isWon`, `state.maxMovableRun(toColumn)`.
+- `GameRecord(dealNumber, moves)` is the save format: JSON, cards written as codes like `AS` and `10H`.
+- The scripted win plays deal 1 to the end in 131 moves.
+- Not built, because the plan leaves them to the feature phase: undo, auto-move to foundation, hints.
+
+Original scope:
+
 Immutable `GameState`; `Move` types (column to column with count, to free cell, to foundation, free cell to column or
 foundation); `canMove`, `apply`, `isWon`; max movable run = (free cells + 1) x 2^(empty columns, not counting a
 destination that is empty); `Deal.fromNumber`; `kotlinx.serialization` round-trip. Tests: truth tables for colour and
 rank adjacency (ported ideas from the old validator tests), deal fixtures, property tests (random legal playouts never
 lose or duplicate a card), and a scripted full win. Exit: 90%+ coverage of `core`.
 
-### Phase 4: Playable spike (3-4 sessions)
+### Phase 4: Playable spike (built 2026-10-11)
+Status: done, with the defaults (four free cells, drag and tap, no auto-move to foundation). What was built:
+- The board: free cells and foundations along the top, eight columns below. Foundations run spades, clubs,
+  hearts, diamonds from the left. Card size follows the screen; on a
+  phone held sideways the cards shrink and the board is centred; long columns squeeze together instead of running
+  off the bottom. Checked at phone and tablet sizes, upright and sideways.
+- Cards are drawn in code behind a `CardStyle` interface. Suits are drawn as shapes, not text, so there is no font
+  to bundle and no emoji substitution.
+- Drag a card or a run to a legal place; an illegal drop slides back. Tap a card to send it to the first place it
+  fits: a foundation, then another card, then a free cell, then an empty column.
+- The game is saved to a file after every move and picked up again on the next start, including after the app is
+  killed. A damaged save file starts a new game.
+- Top bar: `Game #n`, Undo, Restart (asks first), New (offers a random number from 1 to 1,000,000 that can be
+  replaced with any number). A message appears when the game is won.
+- Undo was pulled forward from the feature list because the move list made it nearly free.
+- Tests: 30 in `androidApp`, run on the build machine by Robolectric (no emulator needed), covering taps, drags,
+  slide-back, saving, undo, restart, new game and winning. They run against Android 16 because the touch-injection
+  library does not yet work on 17.
+- Checked on the emulator by hand: drawing, tapping, and resuming a saved game. Dragging was checked only by the
+  automated tests, not by hand.
+
+Original scope:
+
 Responsive board in Compose with placeholder art; drag a card or valid run to a legal target with snap-back if illegal;
 tap-to-move as an alternative; save/restore on process death; deal number shown with "new game / enter number". Test on
 your real phone.
@@ -150,8 +195,8 @@ limits, or $99/year for the App Store/TestFlight); desktop and web targets; Micr
 1. ~~Phone~~ Answered: Pixel 9 Pro (shipped with Android 15, can run 16). It is the primary test device, so no
    need to support old phones: minSdk 26 is a safe floor, higher is fine. It is a large-screen foldable-class
    display, so also test landscape and a tablet emulator.
-2. Applicationid: e.g. `com.maximx1.fads`. Permanent once published, so worth a quick decision, though it doesn't
-   matter while sideloading.
+2. Applicationid: the skeleton uses `com.maximx1.fads`. Permanent once published, so say if you want another,
+   though it doesn't matter while sideloading.
 3. Rules scope: standard 4 free cells only, for now? (Recommended: yes.)
 4. Gameplay preferences for the feature phase: unlimited undo? auto-move to foundation (always / safe only / off)?
 5. When you design the suits, do you want them as vector files (SVG) or something else? The renderer is built to accept
