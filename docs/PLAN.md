@@ -1,6 +1,6 @@
 # Fuck Ads: plan
 
-*Updated 2026-10-11: Phase 2 skeleton built. Background research (audit of the 2021 prototype, full stack
+*Updated 2026-10-11: Phase 2 skeleton and Phase 3 rules engine built. Background research (audit of the 2021 prototype, full stack
 comparison, verified 2026 platform facts) is in [ASSESSMENT.md](ASSESSMENT.md). Feature work has not started.*
 
 ## Decisions
@@ -120,7 +120,21 @@ Versions (all in `gradle/libs.versions.toml`): Gradle 9.8.1, Android Gradle Plug
 2026.09.00. Known follow-ups: detekt 1.23.8 uses APIs Gradle 10 removes, so move to detekt 2 when it leaves alpha.
 The suit symbols draw as colour emoji on the emulator, which the bundled font in Phase 4 fixes.
 
-### Phase 3: Rules engine in `:core` (4-6 sessions)
+### Phase 3: Rules engine in `:core` (built 2026-10-11)
+Status: done. 54 tests, 100% line coverage of `core`. What was built, where it differs from or pins down the
+text below:
+- Deals use SplitMix64 seeded with the deal number (0 and up, any `Long`) and a Fisher-Yates shuffle of the deck in
+  the order spades, hearts, diamonds, clubs, ace to king. The exact steps are documented on `Deal`. Fixtures for
+  deals 0, 1, 2, 1,000,000, 2^31-1 and 2^63-1 were produced by a second, separate implementation and both agree.
+- Moves: `ColumnToColumn(from, to, count)`, `ColumnToFreeCell`, `ColumnToFoundation`, `FreeCellToColumn`,
+  `FreeCellToFoundation`. The API is `state.canMove(move)`, `state.legalMoves()`, `state.play(move)`,
+  `state.isWon`, `state.maxMovableRun(toColumn)`.
+- `GameRecord(dealNumber, moves)` is the save format: JSON, cards written as codes like `AS` and `10H`.
+- The scripted win plays deal 1 to the end in 131 moves.
+- Not built, because the plan leaves them to the feature phase: undo, auto-move to foundation, hints.
+
+Original scope:
+
 Immutable `GameState`; `Move` types (column to column with count, to free cell, to foundation, free cell to column or
 foundation); `canMove`, `apply`, `isWon`; max movable run = (free cells + 1) x 2^(empty columns, not counting a
 destination that is empty); `Deal.fromNumber`; `kotlinx.serialization` round-trip. Tests: truth tables for colour and

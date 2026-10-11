@@ -7,8 +7,9 @@ free, ad-free replacement that plays just as well. Android first; iOS, desktop a
 
 ## Status
 
-**Skeleton.** The project builds, CI checks it, and a blank screen runs on a phone. No playable game yet. The rules
-engine is next: see [docs/PLAN.md](docs/PLAN.md). The stack is Kotlin + Jetpack Compose, laid out as a Kotlin
+**Rules engine done, no playable game yet.** `core` knows the whole game (numbered deals, legal moves, winning,
+saved games) and is fully tested, but the app is still a blank screen. The playable board is next: see
+[docs/PLAN.md](docs/PLAN.md). The stack is Kotlin + Jetpack Compose, laid out as a Kotlin
 Multiplatform project. Every deal is a number: same number, same deal.
 
 ## Build
