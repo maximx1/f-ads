@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder: a spade, drawn inside the adaptive icon's 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,30C54,30 34,46 34,58C34,65 39,70 45,70C49,70 52,68 54,65C56,68 59,70 63,70C69,70 74,65 74,58C74,46 54,30 54,30ZM54,62L48,78L60,78Z" />
+</vector>

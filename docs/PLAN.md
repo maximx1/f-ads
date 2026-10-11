@@ -1,6 +1,6 @@
 # Fuck Ads: plan
 
-*Updated 2026-10-10 after the owner's decisions. Background research (audit of the 2021 prototype, full stack
+*Updated 2026-10-11: Phase 2 skeleton built. Background research (audit of the 2021 prototype, full stack
 comparison, verified 2026 platform facts) is in [ASSESSMENT.md](ASSESSMENT.md). Feature work has not started.*
 
 ## Decisions
@@ -92,24 +92,33 @@ future hints for free.
 Effort unit: one session is about 3 hours.
 
 ### Phase 0: You (no code)
-- Install Android Studio (it bundles the JDK). Enable developer mode and USB debugging on your phone.
+- ~~Install Android Studio (it bundles the JDK).~~ Done 2026-10-11 (Android Studio 2026.2, JDK 25, Android 17 SDK,
+  a Pixel 9 Pro emulator).
+- Still to do: enable developer mode and USB debugging on your phone.
 - Nothing else is required: no Play account, no fee, no identity check, to run on your own phone.
 
-### Phase 1: Repo reset (done on branch `cleanup/repo-reset`, awaiting your merge)
-- Legacy code preserved at tag `legacy-web-excalibur-2021` and pushed. Working tree contains only README, LICENSE,
-  docs, `.gitignore`, `.editorconfig`.
-- Still to do on GitHub when you're ready: merge this branch to `main`, make `main` the default branch, delete
-  `develop`/`3-card-styling` if you like (the tag keeps the code), and close the 12 stale 2021 issues (most are
-  Excalibur-specific; #24-#26 are superseded by this plan).
+### Phase 1: Repo reset (done, on `main`)
+- Legacy code preserved at tag `legacy-web-excalibur-2021` and pushed. `main` has the reset tree.
+- Still to do on GitHub: make `main` the default branch (it is still `develop`), delete `develop`/`3-card-styling`
+  if you like (the tag keeps the code), and close the 14 stale 2021 issues (most are Excalibur-specific; #24-#26
+  are superseded by this plan).
 
-### Phase 2: Kotlin skeleton and CI (2-3 sessions)
-1. Create the KMP project: modules `:core` (targets Android + JVM) and `:androidApp`. Leave iOS out for now (it needs
-   Xcode and slows CI) but keep `core` free of Android and JVM-only APIs so adding it later is mechanical.
-2. `compileSdk` and `targetSdk` 36. minSdk 26 (your Pixel 9 Pro is the main test device).
-3. Spotless + ktlint, detekt, Kover coverage, all in `./gradlew check`.
-4. GitHub Actions CI: `./gradlew check :androidApp:assembleDebug` on every PR and on `main`.
-5. A blank Compose screen running on your phone and a tablet/foldable emulator (Android 16 removes orientation locks on
-   large screens, so landscape and tablets must work from the start).
+### Phase 2: Kotlin skeleton and CI (built 2026-10-11 on branch `2-kotlin-skeleton-ci`)
+1. Done: KMP project with modules `:core` (targets Android + JVM) and `:androidApp`. iOS is left out for now (it
+   needs Xcode and slows CI); `core` stays free of Android and JVM-only APIs so adding it later is mechanical.
+2. Done, with one change: `compileSdk` and `targetSdk` are **37** (Android 17), not 36, because that is the SDK
+   Android Studio 2026.2 installs and what its new-project wizard targets. minSdk 26. Application id
+   `com.maximx1.fads` (open question 2; easy to change until something is published).
+3. Done: Spotless + ktlint, detekt, Android lint, tests and a Kover gate (90% line coverage on `core`), all in
+   `./gradlew check`. Each gate was confirmed to fail the build on bad input.
+4. Written, not yet run: GitHub Actions CI (`./gradlew check :androidApp:assembleDebug` on every PR and on `main`).
+   It runs for the first time when the branch is pushed.
+5. Done on the emulator: the blank screen runs on the Pixel 9 Pro emulator (Android 17) in portrait and landscape,
+   and at a tablet-sized display. Not yet done: your real phone.
+
+Versions (all in `gradle/libs.versions.toml`): Gradle 9.8.1, Android Gradle Plugin 9.4.1, Kotlin 2.4.21, Compose BOM
+2026.09.00. Known follow-ups: detekt 1.23.8 uses APIs Gradle 10 removes, so move to detekt 2 when it leaves alpha.
+The suit symbols draw as colour emoji on the emulator, which the bundled font in Phase 4 fixes.
 
 ### Phase 3: Rules engine in `:core` (4-6 sessions)
 Immutable `GameState`; `Move` types (column to column with count, to free cell, to foundation, free cell to column or
@@ -150,8 +159,8 @@ limits, or $99/year for the App Store/TestFlight); desktop and web targets; Micr
 1. ~~Phone~~ Answered: Pixel 9 Pro (shipped with Android 15, can run 16). It is the primary test device, so no
    need to support old phones: minSdk 26 is a safe floor, higher is fine. It is a large-screen foldable-class
    display, so also test landscape and a tablet emulator.
-2. Applicationid: e.g. `com.maximx1.fads`. Permanent once published, so worth a quick decision, though it doesn't
-   matter while sideloading.
+2. Applicationid: the skeleton uses `com.maximx1.fads`. Permanent once published, so say if you want another,
+   though it doesn't matter while sideloading.
 3. Rules scope: standard 4 free cells only, for now? (Recommended: yes.)
 4. Gameplay preferences for the feature phase: unlimited undo? auto-move to foundation (always / safe only / off)?
 5. When you design the suits, do you want them as vector files (SVG) or something else? The renderer is built to accept

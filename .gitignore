@@ -7,8 +7,9 @@ node_modules/
 coverage/
 dist/
 
-# Future Android / Kotlin / Gradle
+# Android / Kotlin / Gradle
 .gradle/
+.kotlin/
 build/
 local.properties
 .idea/
