@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: legacy-web
     strategy:
       matrix:
         node-version: [15.x]

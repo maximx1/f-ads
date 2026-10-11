@@ -1,4 +1,23 @@
+# macOS
+.DS_Store
+
+# Legacy web prototype
 node_modules/
 .nyc_output/
 coverage/
-.DS_Store
+dist/
+
+# Future Android / Kotlin / Gradle
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Never commit signing material
+*.jks
+*.keystore
+keystore.properties
