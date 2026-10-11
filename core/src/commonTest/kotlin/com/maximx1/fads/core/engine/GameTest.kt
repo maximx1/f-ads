@@ -1,0 +1,92 @@
+package com.maximx1.fads.core.engine
+
+import com.maximx1.fads.core.deal.Deal
+import com.maximx1.fads.core.rules.Move
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+
+class GameTest {
+    // Deal 1 opens with 3D on column 1 and 4S on column 5.
+    private val first = Move.ColumnToColumn(0, 4)
+    private val second = Move.ColumnToFreeCell(0, 0)
+
+    @Test
+    fun startsAtTheDealWithNoMoves() {
+        val game = Game.start(1)
+        assertEquals(1, game.dealNumber)
+        assertEquals(0, game.moveCount)
+        assertFalse(game.canUndo)
+        assertEquals(Deal.fromNumber(1), game.state)
+    }
+
+    @Test
+    fun playAddsToTheRecordAndLeavesTheOldGameAlone() {
+        val start = Game.start(1)
+        val game = start.play(first).play(second)
+        assertEquals(listOf(first, second), game.record.moves)
+        assertEquals(2, game.moveCount)
+        assertEquals(game.record.replay(), game.state)
+        assertEquals(0, start.moveCount)
+    }
+
+    @Test
+    fun illegalMovesThrowAndRecordNothing() {
+        val game = Game.start(1)
+        assertFailsWith<IllegalArgumentException> { game.play(Move.ColumnToFoundation(0)) }
+        assertEquals(0, game.moveCount)
+    }
+
+    @Test
+    fun undoStepsBackOneMoveAtATime() {
+        val one = Game.start(1).play(first)
+        val two = one.play(second)
+        assertTrue(two.canUndo)
+        assertEquals(one.state, two.undo().state)
+        assertEquals(one.record, two.undo().record)
+        assertEquals(Deal.fromNumber(1), two.undo().undo().state)
+    }
+
+    @Test
+    fun undoAtTheStartDoesNothing() {
+        val game = Game.start(1)
+        assertSame(game, game.undo())
+    }
+
+    @Test
+    fun restartKeepsTheDealAndDropsTheMoves() {
+        val game = Game.start(1).play(first).restart()
+        assertEquals(1, game.dealNumber)
+        assertEquals(0, game.moveCount)
+        assertEquals(Deal.fromNumber(1), game.state)
+    }
+
+    @Test
+    fun savedGamesComeBackTheSame() {
+        val game = Game.start(1).play(first).play(second)
+        val restored = assertNotNull(Game.fromJson(game.toJson()))
+        assertEquals(game.record, restored.record)
+        assertEquals(game.state, restored.state)
+    }
+
+    @Test
+    fun unknownFieldsInASavedGameAreIgnored() {
+        val restored = assertNotNull(Game.fromJson("""{"dealNumber":5,"moves":[],"addedLater":true}"""))
+        assertEquals(5, restored.dealNumber)
+    }
+
+    @Test
+    fun unreadableOrImpossibleSavedGamesGiveNull() {
+        assertNull(Game.fromJson(""))
+        assertNull(Game.fromJson("not json"))
+        assertNull(Game.fromJson("""{"moves":[]}"""))
+        assertNull(Game.fromJson("""{"dealNumber":-1}"""))
+        assertNull(Game.fromJson("""{"dealNumber":1,"moves":[{"type":"ch","from":0}]}"""), "illegal first move")
+        assertNull(Game.fromJson("""{"dealNumber":1,"moves":[{"type":"nope"}]}"""))
+    }
+}

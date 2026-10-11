@@ -5,5 +5,7 @@ naming:
     ignoreAnnotated: ['Composable']
 
 style:
+  MagicNumber:
+    ignorePropertyDeclaration: true
   UnusedPrivateMember:
     ignoreAnnotated: ['Preview']

@@ -1,6 +1,6 @@
 # Fuck Ads: plan
 
-*Updated 2026-10-11: Phase 2 skeleton and Phase 3 rules engine built. Background research (audit of the 2021 prototype, full stack
+*Updated 2026-10-11: Phases 2 to 4 built. The game is playable. Background research (audit of the 2021 prototype, full stack
 comparison, verified 2026 platform facts) is in [ASSESSMENT.md](ASSESSMENT.md). Feature work has not started.*
 
 ## Decisions
@@ -141,7 +141,28 @@ destination that is empty); `Deal.fromNumber`; `kotlinx.serialization` round-tri
 rank adjacency (ported ideas from the old validator tests), deal fixtures, property tests (random legal playouts never
 lose or duplicate a card), and a scripted full win. Exit: 90%+ coverage of `core`.
 
-### Phase 4: Playable spike (3-4 sessions)
+### Phase 4: Playable spike (built 2026-10-11)
+Status: done, with the defaults (four free cells, drag and tap, no auto-move to foundation). What was built:
+- The board: free cells and foundations along the top, eight columns below. Card size follows the screen; on a
+  phone held sideways the cards shrink and the board is centred; long columns squeeze together instead of running
+  off the bottom. Checked at phone and tablet sizes, upright and sideways.
+- Cards are drawn in code behind a `CardStyle` interface. Suits are drawn as shapes, not text, so there is no font
+  to bundle and no emoji substitution.
+- Drag a card or a run to a legal place; an illegal drop slides back. Tap a card to send it to the first place it
+  fits: a foundation, then another card, then a free cell, then an empty column.
+- The game is saved to a file after every move and picked up again on the next start, including after the app is
+  killed. A damaged save file starts a new game.
+- Top bar: `Game #n`, Undo, Restart (asks first), New (offers a random number from 1 to 1,000,000 that can be
+  replaced with any number). A message appears when the game is won.
+- Undo was pulled forward from the feature list because the move list made it nearly free.
+- Tests: 30 in `androidApp`, run on the build machine by Robolectric (no emulator needed), covering taps, drags,
+  slide-back, saving, undo, restart, new game and winning. They run against Android 16 because the touch-injection
+  library does not yet work on 17.
+- Checked on the emulator by hand: drawing, tapping, and resuming a saved game. Dragging was checked only by the
+  automated tests, not by hand.
+
+Original scope:
+
 Responsive board in Compose with placeholder art; drag a card or valid run to a legal target with snap-back if illegal;
 tap-to-move as an alternative; save/restore on process death; deal number shown with "new game / enter number". Test on
 your real phone.

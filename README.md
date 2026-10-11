@@ -7,9 +7,9 @@ free, ad-free replacement that plays just as well. Android first; iOS, desktop a
 
 ## Status
 
-**Rules engine done, no playable game yet.** `core` knows the whole game (numbered deals, legal moves, winning,
-saved games) and is fully tested, but the app is still a blank screen. The playable board is next: see
-[docs/PLAN.md](docs/PLAN.md). The stack is Kotlin + Jetpack Compose, laid out as a Kotlin
+**Playable.** Drag or tap cards, undo, restart, pick a deal by number, and the game is saved as you go. The cards
+are plain placeholders and there are no extras yet (no auto-move to foundation, hints, stats or animations beyond
+cards sliding). What comes next is in [docs/PLAN.md](docs/PLAN.md). The stack is Kotlin + Jetpack Compose, laid out as a Kotlin
 Multiplatform project. Every deal is a number: same number, same deal.
 
 ## Build
@@ -25,7 +25,7 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 
 | Command | What it does |
 |---|---|
-| `./gradlew check` | Formatting (Spotless + ktlint), detekt, Android lint, tests, and the coverage gate on `core` |
+| `./gradlew check` | Formatting (Spotless + ktlint), detekt, Android lint, all tests (rules and UI), and the coverage gate on `core` |
 | `./gradlew spotlessApply` | Fix formatting |
 | `./gradlew :androidApp:installDebug` | Build and install on the connected phone or running emulator |
 
