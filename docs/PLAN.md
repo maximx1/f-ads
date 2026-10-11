@@ -143,7 +143,8 @@ lose or duplicate a card), and a scripted full win. Exit: 90%+ coverage of `core
 
 ### Phase 4: Playable spike (built 2026-10-11)
 Status: done, with the defaults (four free cells, drag and tap, no auto-move to foundation). What was built:
-- The board: free cells and foundations along the top, eight columns below. Card size follows the screen; on a
+- The board: free cells and foundations along the top, eight columns below. Foundations run spades, clubs,
+  hearts, diamonds from the left. Card size follows the screen; on a
   phone held sideways the cards shrink and the board is centred; long columns squeeze together instead of running
   off the bottom. Checked at phone and tablet sizes, upright and sideways.
 - Cards are drawn in code behind a `CardStyle` interface. Suits are drawn as shapes, not text, so there is no font

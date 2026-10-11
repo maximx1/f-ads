@@ -106,7 +106,8 @@ internal class BoardLayout(
 
     fun freeCell(index: Int): Offset = Offset(slotLeft(index), gap)
 
-    fun foundation(suit: Suit): Offset = Offset(slotLeft(GameState.FREE_CELL_COUNT + suit.ordinal), gap)
+    fun foundation(suit: Suit): Offset =
+        Offset(slotLeft(GameState.FREE_CELL_COUNT + FoundationOrder.indexOf(suit)), gap)
 
     fun columnBase(column: Int): Offset = Offset(slotLeft(column), columnsTop)
 
@@ -146,5 +147,11 @@ internal class BoardLayout(
         const val ROW_GAPS = 4
     }
 }
+
+/**
+ * The foundations, left to right. This is only where each suit's pile is shown: it is separate from the order of
+ * [Suit] itself, which numbered deals depend on.
+ */
+internal val FoundationOrder = listOf(Suit.SPADES, Suit.CLUBS, Suit.HEARTS, Suit.DIAMONDS)
 
 private const val RANKS = 13

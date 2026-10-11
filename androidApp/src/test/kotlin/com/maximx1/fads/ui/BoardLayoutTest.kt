@@ -54,8 +54,22 @@ class BoardLayoutTest {
             }
             assertEquals(layout.columnBase(0).x, layout.freeCell(0).x)
             assertEquals(layout.columnBase(4).x, layout.foundation(Suit.SPADES).x)
-            assertEquals(layout.columnBase(7).x, layout.foundation(Suit.CLUBS).x)
+            assertEquals(layout.columnBase(7).x, layout.foundation(Suit.DIAMONDS).x)
         }
+    }
+
+    @Test
+    fun foundationsRunSpadesClubsHeartsDiamondsFromTheLeft() {
+        val layout = BoardLayout(1280f, 2400f, gap, freshDeal)
+        val leftToRight = Suit.entries.sortedBy { layout.foundation(it).x }
+        assertEquals(listOf(Suit.SPADES, Suit.CLUBS, Suit.HEARTS, Suit.DIAMONDS), leftToRight)
+        assertEquals(
+            4,
+            Suit.entries
+                .map { layout.foundation(it).x }
+                .toSet()
+                .size,
+        )
     }
 
     @Test
