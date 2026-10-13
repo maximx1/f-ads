@@ -11,6 +11,7 @@ import org.junit.Test
 
 class BoardLayoutTest {
     private val gap = 12f
+    private val split = 6f
     private val freshDeal = listOf(7, 7, 7, 7, 6, 6, 6, 6)
 
     /** Phone upright, phone on its side, tablet upright, tablet on its side: width x height in pixels. */
@@ -22,7 +23,7 @@ class BoardLayoutTest {
     fun everythingFitsOnEveryScreenEvenWithAVeryLongColumn() {
         for ((width, height) in screens) {
             for (sizes in listOf(freshDeal, listOf(19, 1, 0, 7, 6, 6, 6, 7))) {
-                val layout = BoardLayout(width, height, gap, sizes)
+                val layout = BoardLayout(width, height, gap, split, sizes)
                 val screen = Rect(0f, 0f, width, height)
                 val cards =
                     sizes.flatMapIndexed { column, size ->
@@ -42,7 +43,7 @@ class BoardLayoutTest {
     @Test
     fun columnsSitBelowTheTopRowAndSideBySide() {
         for ((width, height) in screens) {
-            val layout = BoardLayout(width, height, gap, freshDeal)
+            val layout = BoardLayout(width, height, gap, split, freshDeal)
             val topRowBottom = layout.card(layout.freeCell(0)).bottom
             for (column in 0 until 8) {
                 assertTrue(layout.columnBase(column).y > topRowBottom)
@@ -53,14 +54,31 @@ class BoardLayoutTest {
                 }
             }
             assertEquals(layout.columnBase(0).x, layout.freeCell(0).x)
-            assertEquals(layout.columnBase(4).x, layout.foundation(Suit.SPADES).x)
             assertEquals(layout.columnBase(7).x, layout.foundation(Suit.DIAMONDS).x)
         }
     }
 
     @Test
+    fun uprightTheFreeCellsAndFoundationsStandFurtherApartAndOnTheirSideTheyDoNot() {
+        for ((width, height) in screens) {
+            val layout = BoardLayout(width, height, gap, split, freshDeal)
+            val between = layout.foundation(Suit.SPADES).x - layout.card(layout.freeCell(3)).right
+            val freeCells = (1 until 4).map { layout.freeCell(it).x - layout.card(layout.freeCell(it - 1)).right }
+            val foundations =
+                FoundationOrder.zipWithNext { left, right ->
+                    layout.foundation(right).x - layout.card(layout.foundation(left)).right
+                }
+            val upright = height > width
+            assertEquals(if (upright) gap + split else gap, between, 0.01f)
+            for (within in freeCells + foundations) {
+                assertEquals(if (upright) gap - split / 6 else gap, within, 0.01f)
+            }
+        }
+    }
+
+    @Test
     fun foundationsRunSpadesClubsHeartsDiamondsFromTheLeft() {
-        val layout = BoardLayout(1280f, 2400f, gap, freshDeal)
+        val layout = BoardLayout(1280f, 2400f, gap, split, freshDeal)
         val leftToRight = Suit.entries.sortedBy { layout.foundation(it).x }
         assertEquals(listOf(Suit.SPADES, Suit.CLUBS, Suit.HEARTS, Suit.DIAMONDS), leftToRight)
         assertEquals(
@@ -74,11 +92,11 @@ class BoardLayoutTest {
 
     @Test
     fun cardsInAColumnStepDownEvenlyAndSqueezeWhenTheColumnIsLong() {
-        val short = BoardLayout(1280f, 2400f, gap, freshDeal)
+        val short = BoardLayout(1280f, 2400f, gap, split, freshDeal)
         val step = short.position(Spot.InColumn(0, 1)).y - short.position(Spot.InColumn(0, 0)).y
         assertEquals(step * 6, short.position(Spot.InColumn(0, 6)).y - short.position(Spot.InColumn(0, 0)).y, 0.01f)
 
-        val long = BoardLayout(2600f, 1000f, gap, listOf(19, 7, 7, 7, 6, 6, 0, 0))
+        val long = BoardLayout(2600f, 1000f, gap, split, listOf(19, 7, 7, 7, 6, 6, 0, 0))
         val squeezed = long.position(Spot.InColumn(0, 1)).y - long.position(Spot.InColumn(0, 0)).y
         val normal = long.position(Spot.InColumn(1, 1)).y - long.position(Spot.InColumn(1, 0)).y
         assertTrue(squeezed < normal)
@@ -88,12 +106,18 @@ class BoardLayoutTest {
     @Test
     fun dropTargetsMatchWhatIsDrawnThere() {
         for ((width, height) in screens) {
-            val layout = BoardLayout(width, height, gap, freshDeal)
+            val layout = BoardLayout(width, height, gap, split, freshDeal)
             for (i in 0 until 4) {
-                assertEquals(DropTarget.FreeCell(i), layout.targetAt(layout.freeCell(i) + layout.cardCentre))
+                val slot = layout.card(layout.freeCell(i))
+                for (x in listOf(slot.left, slot.center.x, slot.right - 1f)) {
+                    assertEquals(DropTarget.FreeCell(i), layout.targetAt(Offset(x, slot.center.y)))
+                }
             }
             for (suit in Suit.entries) {
-                assertEquals(DropTarget.Foundation, layout.targetAt(layout.foundation(suit) + layout.cardCentre))
+                val slot = layout.card(layout.foundation(suit))
+                for (x in listOf(slot.left, slot.center.x, slot.right - 1f)) {
+                    assertEquals(DropTarget.Foundation, layout.targetAt(Offset(x, slot.center.y)))
+                }
             }
             for (column in 0 until 8) {
                 assertEquals(DropTarget.Column(column), layout.targetAt(layout.columnBase(column) + layout.cardCentre))

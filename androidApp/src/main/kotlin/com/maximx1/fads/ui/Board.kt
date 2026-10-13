@@ -69,7 +69,9 @@ fun Board(
         val height = constraints.maxHeight.toFloat()
         val layout =
             remember(width, height, density, state) {
-                BoardLayout(width, height, with(density) { SlotGap.toPx() }, state.columns.map { it.size })
+                with(density) {
+                    BoardLayout(width, height, SlotGap.toPx(), GroupSplit.toPx(), state.columns.map { it.size })
+                }
             }
         val spots = remember(state) { state.spots() }
 
@@ -240,6 +242,7 @@ private fun DrawScope.drawSlots(layout: BoardLayout) {
 }
 
 private val SlotGap = 4.dp
+private val GroupSplit = 2.dp
 private val SlotColor = Color(0x40FFFFFF)
 private val MoveSpring = spring<Offset>(stiffness = Spring.StiffnessMediumLow)
 

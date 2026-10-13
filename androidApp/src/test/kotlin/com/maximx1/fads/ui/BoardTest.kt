@@ -106,7 +106,8 @@ class BoardTest {
     private fun layout(): BoardLayout {
         val root = compose.onRoot().fetchSemanticsNode().size
         val gap = with(compose.density) { 4.dp.toPx() }
-        return BoardLayout(root.width.toFloat(), root.height.toFloat(), gap, state.columns.map { it.size })
+        val split = with(compose.density) { 2.dp.toPx() }
+        return BoardLayout(root.width.toFloat(), root.height.toFloat(), gap, split, state.columns.map { it.size })
     }
 
     @Test
