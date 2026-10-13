@@ -4,6 +4,7 @@ import com.maximx1.fads.core.columnCodes
 import com.maximx1.fads.core.model.Card
 import com.maximx1.fads.core.model.Suit
 import com.maximx1.fads.core.position
+import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.rules.Move.ColumnToColumn
 import com.maximx1.fads.core.rules.Move.ColumnToFoundation
 import com.maximx1.fads.core.rules.Move.ColumnToFreeCell
@@ -49,6 +50,21 @@ class EngineTest {
         val after = position(free = "- AS").play(FreeCellToFoundation(1))
         assertNull(after.freeCells[1])
         assertEquals(1, after.foundationCount(Suit.SPADES))
+    }
+
+    @Test
+    fun foundationBackToAColumnOrAFreeCell() {
+        val state = position("KS 3S", foundations = mapOf(Suit.HEARTS to 2))
+        val onColumn = state.play(Move.FoundationToColumn(Suit.HEARTS, 0))
+        assertEquals("KS 3S 2H", onColumn.columnCodes().first())
+        assertEquals(1, onColumn.foundationCount(Suit.HEARTS))
+        assertEquals(Card.fromCode("AH"), onColumn.foundationTop(Suit.HEARTS))
+
+        val inCell = onColumn.play(Move.FoundationToFreeCell(Suit.HEARTS, 3))
+        assertEquals(listOf(null, null, null, Card.fromCode("AH")), inCell.freeCells)
+        assertEquals(0, inCell.foundationCount(Suit.HEARTS))
+        assertNull(inCell.foundationTop(Suit.HEARTS))
+        assertFailsWith<IllegalArgumentException> { inCell.play(Move.FoundationToFreeCell(Suit.HEARTS, 0)) }
     }
 
     @Test

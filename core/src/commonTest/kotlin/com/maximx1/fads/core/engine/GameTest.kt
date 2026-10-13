@@ -48,8 +48,72 @@ class GameTest {
         val two = one.play(second)
         assertTrue(two.canUndo)
         assertEquals(one.state, two.undo().state)
-        assertEquals(one.record, two.undo().record)
+        assertEquals(one.record.moves, two.undo().record.moves)
         assertEquals(Deal.fromNumber(1), two.undo().undo().state)
+    }
+
+    @Test
+    fun everyMovePlayedAndEveryUndoCountsAsAMoveMade() {
+        val start = Game.start(1)
+        assertEquals(0, start.movesMade)
+        val played = start.play(first).play(second)
+        assertEquals(2, played.movesMade)
+
+        val undone = played.undo()
+        assertEquals(3, undone.movesMade)
+        assertEquals(1, undone.moveCount)
+        assertEquals(4, undone.play(second).movesMade)
+        assertEquals(0, start.undo().movesMade)
+    }
+
+    @Test
+    fun aRunMovedTogetherIsOneMove() {
+        // Four moves on deal 1 leave 9H 8S on top of column 8 and a bare 10C on column 1.
+        val game =
+            Game
+                .start(1)
+                .play(first)
+                .play(Move.ColumnToColumn(0, 7))
+                .play(Move.ColumnToFoundation(0))
+                .play(Move.ColumnToColumn(6, 7))
+        assertEquals(4, game.movesMade)
+        assertEquals(5, game.play(Move.ColumnToColumn(7, 0, count = 2)).movesMade)
+    }
+
+    @Test
+    fun restartPutsTheMoveCountBackAtZero() {
+        assertEquals(
+            0,
+            Game
+                .start(1)
+                .play(first)
+                .undo()
+                .restart()
+                .movesMade,
+        )
+    }
+
+    @Test
+    fun theMoveCountIsSavedAndAGameSavedWithoutOneCountsItsMoves() {
+        val game =
+            Game
+                .start(1)
+                .play(first)
+                .undo()
+                .play(first)
+        assertEquals(3, Game.fromJson(game.toJson())?.movesMade)
+        assertEquals(1, Game.fromJson("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}]}""")?.movesMade)
+        assertNull(Game.fromJson("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}],"movesMade":0}"""))
+    }
+
+    @Test
+    fun theHintIsALegalMoveThatDoesNotJustUndoTheLastOne() {
+        val start = Game.start(1)
+        val hint = assertNotNull(start.hint())
+        val played = start.play(hint)
+        val next = assertNotNull(played.hint())
+        assertTrue(played.state != start.state)
+        assertTrue(played.play(next).state != start.state)
     }
 
     @Test

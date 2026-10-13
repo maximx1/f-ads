@@ -1,12 +1,10 @@
 package com.maximx1.fads.game
 
-import android.os.SystemClock
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
+import com.maximx1.fads.core.engine.BestTimes
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.Win
 import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.rules.canMove
 import kotlinx.coroutines.Job
@@ -16,16 +14,27 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.io.File
 import kotlin.random.Random
 
+/**
+ * Holds the game on the table, runs its clock and keeps it saved.
+ *
+ * @param now a clock in milliseconds that only ever goes forward. Only the difference between two readings is
+ * used.
+ */
 class GameViewModel(
     private val store: GameStore,
+    private val now: () -> Long,
 ) : ViewModel() {
     private val current = MutableStateFlow<Game?>(null)
 
     /** The game on the table. `null` only for the moment it takes to read the saved game at start-up. */
     val game: StateFlow<Game?> = current.asStateFlow()
+
+    private val best = MutableStateFlow(BestTimes())
+
+    /** The player's best times. Empty for the moment it takes to read them at start-up. */
+    val bestTimes: StateFlow<BestTimes> = best.asStateFlow()
 
     private val seconds = MutableStateFlow(0L)
 
@@ -46,6 +55,7 @@ class GameViewModel(
 
     init {
         viewModelScope.launch {
+            best.value = store.loadBestTimes()
             show(store.load() ?: Game.start(randomDealNumber()).also { saves.send(it) })
             for (game in saves) store.save(game)
         }
@@ -68,11 +78,33 @@ class GameViewModel(
 
     fun newGame(dealNumber: Long) = change { Game.start(dealNumber) }
 
+    /**
+     * Stops the clock and writes the game out, returning once it is safely saved. For a platform that is about
+     * to shut the game down without warning, as a desktop does when its window is closed.
+     */
+    suspend fun close() {
+        onScreen(false)
+        current.value?.let { store.save(it) }
+    }
+
     private fun change(transform: (Game) -> Game) {
         val before = current.value ?: return
         val after = transform(stopClock(before))
+        if (after.state.isWon && !before.state.isWon) record(after)
         show(after)
         if (after !== before) saves.trySend(after)
+    }
+
+    /**
+     * Counts a win towards the best times. A win with nothing on the clock is left out: it can only come from a
+     * game saved before there was a clock, and no real game could ever beat it.
+     */
+    private fun record(won: Game) {
+        if (won.elapsedMillis <= 0) return
+        val times = best.value.with(Win(won.dealNumber, won.elapsedMillis, won.movesMade))
+        if (times === best.value) return
+        best.value = times
+        viewModelScope.launch { store.save(times) }
     }
 
     /** Stops the clock and returns [game] with the time it counted added on. */
@@ -101,21 +133,10 @@ class GameViewModel(
             }
     }
 
-    // Time while the phone sleeps would count too, but the clock is never running then.
-    private fun now(): Long = SystemClock.elapsedRealtime()
-
     companion object {
         const val MAX_RANDOM_DEAL = 1_000_000L
         private const val SECOND = 1000L
 
         fun randomDealNumber(): Long = Random.nextLong(1, MAX_RANDOM_DEAL + 1)
-
-        val Factory =
-            viewModelFactory {
-                initializer {
-                    val app = checkNotNull(this[APPLICATION_KEY])
-                    GameViewModel(GameStore(File(app.filesDir, "game.json")))
-                }
-            }
     }
 }

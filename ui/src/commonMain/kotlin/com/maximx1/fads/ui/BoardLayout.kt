@@ -1,15 +1,18 @@
 package com.maximx1.fads.ui
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.model.Card
 import com.maximx1.fads.core.model.Suit
 import com.maximx1.fads.core.rules.Move
+import com.maximx1.fads.core.rules.cardsMovedBy
 import com.maximx1.fads.core.state.GameState
 import kotlin.math.floor
 import kotlin.math.min
 
 /** Where a card currently sits. */
-internal sealed interface Spot {
+sealed interface Spot {
     data class InColumn(
         val column: Int,
         val index: Int,
@@ -26,7 +29,7 @@ internal sealed interface Spot {
 }
 
 /** Somewhere a dragged card can be dropped. Any foundation slot stands for all of them: the suit decides. */
-internal sealed interface DropTarget {
+sealed interface DropTarget {
     data class Column(
         val index: Int,
     ) : DropTarget
@@ -38,7 +41,7 @@ internal sealed interface DropTarget {
     data object Foundation : DropTarget
 }
 
-internal fun GameState.spots(): Map<Card, Spot> =
+fun GameState.spots(): Map<Card, Spot> =
     buildMap {
         columns.forEachIndexed { column, cards ->
             cards.forEachIndexed { index, card -> put(card, Spot.InColumn(column, index)) }
@@ -50,7 +53,7 @@ internal fun GameState.spots(): Map<Card, Spot> =
     }
 
 /** The move that takes [count] cards from [from] to [to], or `null` if the game has no such move. */
-internal fun moveFor(
+fun moveFor(
     from: Spot,
     count: Int,
     to: DropTarget,
@@ -73,9 +76,40 @@ internal fun moveFor(
         }
 
         is Spot.OnFoundation -> {
-            null
+            when (to) {
+                is DropTarget.Column -> Move.FoundationToColumn(from.suit, to.index)
+                is DropTarget.FreeCell -> Move.FoundationToFreeCell(from.suit, to.index)
+                DropTarget.Foundation -> null
+            }
         }
     }
+
+/** Where the first card of [move] comes to rest. The move must be legal in [state]. */
+fun BoardLayout.landing(
+    state: GameState,
+    move: Move,
+): Offset =
+    when (move) {
+        is Move.ColumnToColumn -> position(Spot.InColumn(move.to, state.columns[move.to].size))
+        is Move.FreeCellToColumn -> position(Spot.InColumn(move.to, state.columns[move.to].size))
+        is Move.FoundationToColumn -> position(Spot.InColumn(move.to, state.columns[move.to].size))
+        is Move.ColumnToFreeCell -> freeCell(move.cell)
+        is Move.FoundationToFreeCell -> freeCell(move.cell)
+        is Move.ColumnToFoundation -> foundation(state.cardsMovedBy(move).first().suit)
+        is Move.FreeCellToFoundation -> foundation(state.cardsMovedBy(move).first().suit)
+    }
+
+/**
+ * The space between neighbouring cards for a board of this size. An upright board gets a little more, so the
+ * free cells and the foundations do not sit quite so close together.
+ */
+fun slotGap(
+    width: Float,
+    height: Float,
+): Dp = if (height > width) UprightGap else SidewaysGap
+
+private val UprightGap = 6.dp
+private val SidewaysGap = 4.dp
 
 /**
  * The geometry of the board, in pixels, for a given area. Free cells and foundations share the top row; the
@@ -85,7 +119,7 @@ internal fun moveFor(
  * on its side), in which case they shrink and the board is centred. Long columns squeeze their cards together
  * rather than run off the bottom.
  */
-internal class BoardLayout(
+class BoardLayout(
     width: Float,
     height: Float,
     private val gap: Float,
@@ -152,6 +186,6 @@ internal class BoardLayout(
  * The foundations, left to right. This is only where each suit's pile is shown: it is separate from the order of
  * [Suit] itself, which numbered deals depend on.
  */
-internal val FoundationOrder = listOf(Suit.SPADES, Suit.CLUBS, Suit.HEARTS, Suit.DIAMONDS)
+val FoundationOrder = listOf(Suit.SPADES, Suit.CLUBS, Suit.HEARTS, Suit.DIAMONDS)
 
 private const val RANKS = 13

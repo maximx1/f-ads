@@ -2,10 +2,12 @@ package com.maximx1.fads.ui
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -41,8 +43,10 @@ class NewGameDialogTest {
     fun openTheDialogOnASavedGame() {
         saveFile.writeText("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}]}""")
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("New")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("New").performClick()
+        compose.waitUntil(
+            TIMEOUT,
+        ) { compose.onAllNodes(hasContentDescription("New")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("New").performClick()
     }
 
     @After
@@ -56,7 +60,7 @@ class NewGameDialogTest {
 
     /** The deal number is only shown in the pause dialog, so this opens it to look. */
     private fun assertGameNumber(number: Long) {
-        compose.onNodeWithText("Pause").performClick()
+        compose.onNodeWithContentDescription("Pause").performClick()
         inDialog("Game #$number").assertExists()
         inDialog("Resume").performClick()
     }

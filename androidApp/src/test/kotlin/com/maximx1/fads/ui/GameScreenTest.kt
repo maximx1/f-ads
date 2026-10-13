@@ -4,12 +4,16 @@ import android.os.Looper
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -19,8 +23,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximx1.fads.MainActivity
+import com.maximx1.fads.core.engine.BestTimes
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.game.FileStorage
 import com.maximx1.fads.game.GameViewModel
+import com.maximx1.fads.ui.theme.TableTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -85,9 +92,14 @@ class GameScreenTest {
 
     private fun clock() = compose.onNodeWithTag(ELAPSED_TAG)
 
+    private fun moves() = compose.onNodeWithTag(MOVES_TAG)
+
+    /** The settings as they are saved right now. */
+    private fun settings() = Settings(FileStorage(RuntimeEnvironment.getApplication().filesDir))
+
     /** The deal number is only shown in the pause dialog, so this opens it to look. */
     private fun assertGameNumber(number: Long) {
-        compose.onNodeWithText("Pause").performClick()
+        compose.onNodeWithContentDescription("Pause").performClick()
         inDialog("Game #$number").assertExists()
         inDialog("Resume").performClick()
     }
@@ -99,14 +111,14 @@ class GameScreenTest {
         val number = savedGame()!!.dealNumber
         assertTrue(number in 1..GameViewModel.MAX_RANDOM_DEAL)
         assertGameNumber(number)
-        compose.onNodeWithText("Undo").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Undo").assertIsNotEnabled()
     }
 
     @Test
     fun aSavedGameIsPickedUpWhereItWasLeft() {
         launch("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}]}""")
         assertGameNumber(1)
-        compose.onNodeWithText("Undo").assertIsEnabled()
+        compose.onNodeWithContentDescription("Undo").assertIsEnabled()
         val threeOfDiamonds = compose.onNodeWithTag("3D").fetchSemanticsNode().boundsInRoot
         val fourOfSpades = compose.onNodeWithTag("4S").fetchSemanticsNode().boundsInRoot
         assertEquals(fourOfSpades.left, threeOfDiamonds.left)
@@ -127,11 +139,11 @@ class GameScreenTest {
         tap("2C")
         waitForSave { it.moveCount == 2 }
 
-        compose.onNodeWithText("Undo").performClick()
+        compose.onNodeWithContentDescription("Undo").performClick()
         waitForSave { it.moveCount == 1 }
-        compose.onNodeWithText("Undo").performClick()
+        compose.onNodeWithContentDescription("Undo").performClick()
         waitForSave { it.moveCount == 0 }
-        compose.onNodeWithText("Undo").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Undo").assertIsNotEnabled()
     }
 
     @Test
@@ -140,36 +152,159 @@ class GameScreenTest {
         tap("3D")
         scenario!!.recreate()
         assertGameNumber(1)
-        compose.onNodeWithText("Undo").assertIsEnabled()
+        compose.onNodeWithContentDescription("Undo").assertIsEnabled()
     }
 
     @Test
-    fun theBarSitsUnderTheBoardWithTheClockInItsMiddle() {
+    fun theClockIsCentredAboveTheBoardAndTheSplitButtonRunsUnderIt() {
         launch("""{"dealNumber":1}""")
         val screen = compose.onRoot().fetchSemanticsNode().boundsInRoot
         val time = clock().fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, time.center.x, 1f)
+        assertTrue(
+            time.bottom <=
+                compose
+                    .onNodeWithTag("JD")
+                    .fetchSemanticsNode()
+                    .boundsInRoot.top,
+        )
 
         val lowestCard = compose.onNodeWithTag("3D").fetchSemanticsNode().boundsInRoot
-        for (button in listOf("Undo", "Restart", "New", "Pause")) {
-            val bounds = compose.onNodeWithText(button).fetchSemanticsNode().boundsInRoot
-            assertTrue(bounds.top > lowestCard.bottom)
-            assertTrue(if (button in listOf("Undo", "Restart")) bounds.right < time.left else bounds.left > time.right)
+        val parts =
+            listOf("Undo", "Restart", "New", "Hint", "Pause").map {
+                compose.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot
+            }
+        for (part in parts) {
+            assertTrue(part.top > lowestCard.bottom)
+            assertEquals(parts[0].top, part.top)
+            assertEquals(parts[0].width, part.width, 1f)
         }
+        // One button, not four: each part starts where the last one stops, but for the line between them.
+        for ((left, right) in parts.zipWithNext()) assertTrue(right.left - left.right in 0f..DIVIDER)
+        assertEquals(screen.center.x, (parts.first().left + parts.last().right) / 2, 1f)
+    }
+
+    @Test
+    fun theMoveCountSitsTopRightAndCountsMovesAndUndosAlike() {
+        launch("""{"dealNumber":1}""")
+        val screen = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val time = clock().fetchSemanticsNode().boundsInRoot
+        val count = moves().fetchSemanticsNode().boundsInRoot
+        assertTrue(count.left > time.right)
+        assertTrue(screen.right - count.right in 0f..EDGE)
+        assertTrue(
+            count.bottom <=
+                compose
+                    .onNodeWithTag("JD")
+                    .fetchSemanticsNode()
+                    .boundsInRoot.top,
+        )
+
+        moves().assertTextEquals("Moves: 0")
+        tap("3D")
+        tap("2C")
+        moves().assertTextEquals("Moves: 2")
+        compose.onNodeWithContentDescription("Undo").performClick()
+        moves().assertTextEquals("Moves: 3")
+        waitForSave { it.moveCount == 1 && it.movesMade == 3 }
+
+        scenario!!.recreate()
+        moves().assertTextEquals("Moves: 3")
+        compose.onNodeWithContentDescription("Restart").performClick()
+        inDialog("Restart").performClick()
+        moves().assertTextEquals("Moves: 0")
+    }
+
+    @Test
+    fun hintPointsOutAMoveUntilAMoveIsMadeAndCountsForNothing() {
+        launch("""{"dealNumber":1}""")
+        compose.onNodeWithTag(HINT_TAG).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Hint").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(HINT_TAG).assertExists()
+        moves().assertTextEquals("Moves: 0")
+
+        tap("3D")
+        compose.onNodeWithTag(HINT_TAG).assertDoesNotExist()
+        moves().assertTextEquals("Moves: 1")
+    }
+
+    @Test
+    fun aHintGoesAwayByItselfAfterAFewSeconds() {
+        launch("""{"dealNumber":1}""")
+        compose.onNodeWithContentDescription("Hint").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag(HINT_TAG).assertExists()
+        compose.mainClock.advanceTimeBy(HINT_LASTS)
+        compose.onNodeWithTag(HINT_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun dimmingStuckCardsIsOnUntilItIsSwitchedOffInThePauseDialog() {
+        launch("""{"dealNumber":1}""")
+        compose.onNodeWithContentDescription("Pause").performClick()
+        inDialog("Dim cards that can't move").assertIsOn()
+        inDialog("Dim cards that can't move").performClick()
+        inDialog("Dim cards that can't move").assertIsOff()
+        assertEquals(false, settings().dimsStuckCards)
+    }
+
+    @Test
+    fun aWinWithTimeOnTheClockBecomesTheBestTimeAndIsKept() {
+        val oneMoveLeft = checkNotNull(javaClass.getResource("/deal-1-one-move-left.json")).readText()
+        launch(oneMoveLeft)
+        compose.onNodeWithContentDescription("Pause").performClick()
+        compose.onNode(hasText("Best time", substring = true)).assertDoesNotExist()
+        inDialog("Resume").performClick()
+        compose.waitForIdle()
+
+        letPass(seconds = 75)
+        tap(
+            Game
+                .fromJson(oneMoveLeft)!!
+                .state.columns[0]
+                .last()
+                .code,
+        )
+        inDialog("A new best time!").assertExists()
+        inDialog("Close").performClick()
+        compose.onNodeWithContentDescription("Pause").performClick()
+        inDialog("Best time: 01:15").assertExists()
+        inDialog("Best on this deal: 01:15").assertExists()
+
+        val bestTimes = File(RuntimeEnvironment.getApplication().filesDir, "best-times.json")
+        compose.waitUntil(TIMEOUT) { bestTimes.exists() }
+        assertEquals(1L, BestTimes.fromJson(bestTimes.readText())?.fastest?.dealNumber)
+    }
+
+    @Test
+    fun aThemePickedInThePauseDialogGoesOnTheTableAndIsKept() {
+        launch("""{"dealNumber":1}""")
+        compose.onNodeWithContentDescription("Pause").performClick()
+        inDialog("Flat").assertIsSelected()
+        inDialog("Cyberpunk").performClick()
+        inDialog("Cyberpunk").assertIsSelected()
+        inDialog("Resume").performClick()
+        assertEquals(TableTheme.CYBERPUNK, settings().theme)
+
+        scenario!!.close()
+        launch()
+        compose.onNodeWithContentDescription("Pause").performClick()
+        inDialog("Cyberpunk").assertIsSelected()
     }
 
     @Test
     fun restartAsksFirstThenClearsTheMoves() {
         launch("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}]}""")
-        compose.onNodeWithText("Restart").performClick()
+        compose.onNodeWithContentDescription("Restart").performClick()
         inDialog("Restart this deal?").assertExists()
         inDialog("Cancel").performClick()
         assertEquals(1, savedGame()?.moveCount)
 
-        compose.onNodeWithText("Restart").performClick()
+        compose.onNodeWithContentDescription("Restart").performClick()
         inDialog("Restart").performClick()
         waitForSave { it.dealNumber == 1L && it.moveCount == 0 }
-        compose.onNodeWithText("Undo").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Undo").assertIsNotEnabled()
     }
 
     @Test
@@ -233,7 +368,7 @@ class GameScreenTest {
         launch("""{"dealNumber":617,"elapsedMillis":60000}""")
         letPass(seconds = 3)
 
-        compose.onNodeWithText("Pause").performClick()
+        compose.onNodeWithContentDescription("Pause").performClick()
         inDialog("Paused").assertExists()
         inDialog("Game #617").assertExists()
         inDialog("Time: 01:03").assertExists()
@@ -251,7 +386,7 @@ class GameScreenTest {
     @Test
     fun aPausedGameStaysPausedWhenTheAppComesBack() {
         launch("""{"dealNumber":1,"elapsedMillis":60000}""")
-        compose.onNodeWithText("Pause").performClick()
+        compose.onNodeWithContentDescription("Pause").performClick()
         compose.waitForIdle()
 
         scenario!!.moveToState(Lifecycle.State.CREATED)
@@ -265,13 +400,13 @@ class GameScreenTest {
         launch("""{"dealNumber":1}""")
         tap("3D")
         letPass(seconds = 4)
-        compose.onNodeWithText("Undo").performClick()
+        compose.onNodeWithContentDescription("Undo").performClick()
         letPass(seconds = 4)
         clock().assertTextEquals("00:08")
         waitForSave { it.moveCount == 0 && it.elapsedMillis >= 4_000 }
 
         tap("3D")
-        compose.onNodeWithText("Restart").performClick()
+        compose.onNodeWithContentDescription("Restart").performClick()
         inDialog("Restart").performClick()
         letPass(seconds = 4)
         clock().assertTextEquals("00:00")
@@ -299,6 +434,9 @@ class GameScreenTest {
 
     private companion object {
         const val TIMEOUT = 10_000L
+        const val DIVIDER = 4f
+        const val HINT_LASTS = 5_000L
+        const val EDGE = 60f
         val grip = Offset(30f, 20f)
     }
 }

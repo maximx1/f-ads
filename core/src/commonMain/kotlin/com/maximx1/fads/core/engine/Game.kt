@@ -1,6 +1,7 @@
 package com.maximx1.fads.core.engine
 
 import com.maximx1.fads.core.rules.Move
+import com.maximx1.fads.core.rules.hint
 import com.maximx1.fads.core.state.GameState
 import kotlinx.serialization.json.Json
 
@@ -11,7 +12,14 @@ class Game private constructor(
 ) {
     val dealNumber: Long get() = record.dealNumber
 
+    /** How many moves lead from the deal to this position. Undo takes one off. */
     val moveCount: Int get() = record.moves.size
+
+    /**
+     * The player's move count: one for every move played and one for every undo. A run of cards moved together
+     * is one move, however many free cells it would take to move it card by card.
+     */
+    val movesMade: Int get() = record.movesMade
 
     val canUndo: Boolean get() = record.moves.isNotEmpty()
 
@@ -22,13 +30,19 @@ class Game private constructor(
     val inPlay: Boolean get() = (canUndo || elapsedMillis > 0) && !state.isWon
 
     /** Throws [IllegalArgumentException] if the move is not legal. */
-    fun play(move: Move): Game = Game(record.copy(moves = record.moves + move), state.play(move))
+    fun play(move: Move): Game =
+        Game(record.copy(moves = record.moves + move, movesMade = movesMade + 1), state.play(move))
 
-    /** Takes back the last move. Does nothing at the start of the game. */
-    fun undo(): Game = if (canUndo) resume(record.copy(moves = record.moves.dropLast(1))) else this
+    /** Takes back the last move, which counts as a move made. Does nothing at the start of the game. */
+    fun undo(): Game =
+        if (canUndo) resume(record.copy(moves = record.moves.dropLast(1), movesMade = movesMade + 1)) else this
 
-    /** The same deal again from the first card, with the clock back at zero. */
+    /** The same deal again from the first card, with the clock and the move count back at zero. */
     fun restart(): Game = start(dealNumber)
+
+    /** A move worth trying next, or `null` if there is none to suggest. It never just undoes the last move. */
+    fun hint(): Move? =
+        state.hint(before = if (canUndo) record.copy(moves = record.moves.dropLast(1)).replay() else null)
 
     /** The same game with [millis] on its clock. */
     fun withElapsed(millis: Long): Game = Game(record.copy(elapsedMillis = millis), state)
