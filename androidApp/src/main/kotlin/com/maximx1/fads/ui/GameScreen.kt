@@ -1,5 +1,6 @@
 package com.maximx1.fads.ui
 
+import android.text.format.DateUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,11 +27,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.maximx1.fads.R
@@ -42,7 +45,13 @@ private enum class Prompt { NONE, NEW_GAME, RESTART }
 @Composable
 fun GameScreen(viewModel: GameViewModel = viewModel(factory = GameViewModel.Factory)) {
     val game by viewModel.game.collectAsStateWithLifecycle()
+    val elapsedSeconds by viewModel.elapsedSeconds.collectAsStateWithLifecycle()
     var prompt by rememberSaveable { mutableStateOf(Prompt.NONE) }
+
+    LifecycleStartEffect(viewModel) {
+        viewModel.onScreen(true)
+        onStopOrDispose { viewModel.onScreen(false) }
+    }
 
     Column(
         Modifier
@@ -55,6 +64,7 @@ fun GameScreen(viewModel: GameViewModel = viewModel(factory = GameViewModel.Fact
         val current = game ?: return@Column
         TopBar(
             game = current,
+            elapsedSeconds = elapsedSeconds,
             onUndo = viewModel::undo,
             onRestart = { prompt = Prompt.RESTART },
             onNewGame = { prompt = Prompt.NEW_GAME },
@@ -94,17 +104,26 @@ fun GameScreen(viewModel: GameViewModel = viewModel(factory = GameViewModel.Fact
 @Composable
 private fun TopBar(
     game: Game,
+    elapsedSeconds: Long,
     onUndo: () -> Unit,
     onRestart: () -> Unit,
     onNewGame: () -> Unit,
 ) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = stringResource(R.string.game_number, game.dealNumber),
-            color = Color.White,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.weight(1f),
-        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.game_number, game.dealNumber),
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = DateUtils.formatElapsedTime(elapsedSeconds),
+                color = Color.White.copy(alpha = DETAIL_ALPHA),
+                // Digits of equal width, so the time does not shuffle sideways as it counts.
+                style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                modifier = Modifier.testTag(ELAPSED_TAG),
+            )
+        }
         TextButton(onClick = onUndo, enabled = game.canUndo) { Text(stringResource(R.string.undo)) }
         TextButton(onClick = onRestart, enabled = game.canUndo) { Text(stringResource(R.string.restart)) }
         TextButton(onClick = onNewGame) { Text(stringResource(R.string.new_game)) }
@@ -167,7 +186,10 @@ private fun WinDialog(
     AlertDialog(
         onDismissRequest = { closed = true },
         title = { Text(stringResource(R.string.win_title)) },
-        text = { Text(stringResource(R.string.win_text, game.dealNumber, game.moveCount)) },
+        text = {
+            val time = DateUtils.formatElapsedTime(game.elapsedMillis / DateUtils.SECOND_IN_MILLIS)
+            Text(stringResource(R.string.win_text, game.dealNumber, game.moveCount, time))
+        },
         confirmButton = { TextButton(onClick = onNewGame) { Text(stringResource(R.string.win_new_game)) } },
         dismissButton = { TextButton(onClick = { closed = true }) { Text(stringResource(R.string.close)) } },
     )
@@ -175,3 +197,6 @@ private fun WinDialog(
 
 // 18 digits always fits in a Long.
 private const val MAX_DEAL_DIGITS = 18
+private const val DETAIL_ALPHA = 0.7f
+
+internal const val ELAPSED_TAG = "elapsed"

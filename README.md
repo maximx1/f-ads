@@ -7,9 +7,9 @@ free, ad-free replacement that plays just as well. Android first; iOS, desktop a
 
 ## Status
 
-**Playable.** Drag or tap cards, undo, restart, pick a deal by number, and the game is saved as you go. The cards
-are plain placeholders and there are no extras yet (no auto-move to foundation, hints, stats or animations beyond
-cards sliding). What comes next is in [docs/PLAN.md](docs/PLAN.md). The stack is Kotlin + Jetpack Compose, laid out as a Kotlin
+**Playable.** Drag or tap cards, undo, restart, pick a deal by number, and the game is saved as you go. A clock
+times each game from the first move to the win. The cards are plain placeholders and there are few extras yet (no
+auto-move to foundation, hints, stats or animations beyond cards sliding). What comes next is in [docs/PLAN.md](docs/PLAN.md). The stack is Kotlin + Jetpack Compose, laid out as a Kotlin
 Multiplatform project. Every deal is a number: same number, same deal.
 
 ## Build

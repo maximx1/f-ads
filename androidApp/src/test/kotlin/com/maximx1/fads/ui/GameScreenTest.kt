@@ -1,8 +1,10 @@
 package com.maximx1.fads.ui
 
+import android.os.Looper
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
@@ -11,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximx1.fads.MainActivity
@@ -25,8 +28,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.File
+import java.time.Duration
 
 /** Runs the whole app, save file included, through Robolectric. */
 @RunWith(RobolectricTestRunner::class)
@@ -71,6 +76,14 @@ class GameScreenTest {
     }
 
     private fun inDialog(text: String) = compose.onNode(hasText(text) and hasAnyAncestor(isDialog()))
+
+    /** Lets time go by on the phone's clock, which otherwise stands still in these tests. */
+    private fun letPass(seconds: Long) {
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(seconds))
+        compose.waitForIdle()
+    }
+
+    private fun clock() = compose.onNodeWithTag(ELAPSED_TAG)
 
     @Test
     fun aFirstStartDealsARandomGameAndSavesIt() {
@@ -149,10 +162,85 @@ class GameScreenTest {
         tap(lastCard.code)
 
         inDialog("You won!").assertExists()
-        inDialog("Deal #1 solved. Moves: 131.").assertExists()
+        inDialog("Deal #1 solved. Moves: 131. Time: 00:00.").assertExists()
         inDialog("New game").performClick()
         compose.onNodeWithText("You won!").assertDoesNotExist()
         waitForSave { it.moveCount == 0 }
+    }
+
+    @Test
+    fun theClockWaitsForTheFirstMoveThenCountsTheSeconds() {
+        launch("""{"dealNumber":1}""")
+        clock().assertTextEquals("00:00")
+        letPass(seconds = 30)
+        clock().assertTextEquals("00:00")
+
+        tap("3D")
+        letPass(seconds = 5)
+        clock().assertTextEquals("00:05")
+        letPass(seconds = 60)
+        clock().assertTextEquals("01:05")
+    }
+
+    @Test
+    fun theClockPicksUpFromTheSavedTime() {
+        launch("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}],"elapsedMillis":3600000}""")
+        clock().assertTextEquals("1:00:00")
+        letPass(seconds = 2)
+        clock().assertTextEquals("1:00:02")
+    }
+
+    @Test
+    fun theClockStopsWhileTheGameIsOutOfSightAndItsTimeIsSaved() {
+        launch("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}],"elapsedMillis":60000}""")
+        letPass(seconds = 3)
+
+        scenario!!.moveToState(Lifecycle.State.CREATED)
+        waitForSave { it.elapsedMillis in 63_000..63_999 }
+        letPass(seconds = 300)
+
+        scenario!!.moveToState(Lifecycle.State.RESUMED)
+        compose.waitForIdle()
+        clock().assertTextEquals("01:03")
+        letPass(seconds = 1)
+        clock().assertTextEquals("01:04")
+    }
+
+    @Test
+    fun theClockKeepsGoingThroughUndoAndGoesBackToZeroOnRestart() {
+        launch("""{"dealNumber":1}""")
+        tap("3D")
+        letPass(seconds = 4)
+        compose.onNodeWithText("Undo").performClick()
+        letPass(seconds = 4)
+        clock().assertTextEquals("00:08")
+        waitForSave { it.moveCount == 0 && it.elapsedMillis >= 4_000 }
+
+        tap("3D")
+        compose.onNodeWithText("Restart").performClick()
+        inDialog("Restart").performClick()
+        letPass(seconds = 4)
+        clock().assertTextEquals("00:00")
+        waitForSave { it.moveCount == 0 && it.elapsedMillis == 0L }
+    }
+
+    @Test
+    fun winningStopsTheClockAndShowsTheTime() {
+        val oneMoveLeft = checkNotNull(javaClass.getResource("/deal-1-one-move-left.json")).readText()
+        launch(oneMoveLeft)
+        letPass(seconds = 75)
+        tap(
+            Game
+                .fromJson(oneMoveLeft)!!
+                .state.columns[0]
+                .last()
+                .code,
+        )
+
+        inDialog("Deal #1 solved. Moves: 131. Time: 01:15.").assertExists()
+        letPass(seconds = 20)
+        clock().assertTextEquals("01:15")
+        waitForSave { it.state.isWon && it.elapsedMillis in 75_000..75_999 }
     }
 
     private companion object {

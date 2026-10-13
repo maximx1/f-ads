@@ -45,5 +45,8 @@ class ScriptedWinTest {
         assertTrue(end.columns.all { it.isEmpty() })
         assertTrue(end.freeCells.all { it == null })
         assertEquals(Card.deck.toSet(), end.allCards().toSet())
+
+        assertTrue(Game.resume(record.copy(moves = moves.dropLast(1))).inPlay)
+        assertFalse(Game.resume(record).inPlay, "the clock stops at the win")
     }
 }

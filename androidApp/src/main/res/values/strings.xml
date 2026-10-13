@@ -17,7 +17,7 @@
     <string name="restart_text" tools:ignore="PluralsCandidate">Your moves on deal #%1$d will be cleared.</string>
 
     <string name="win_title">You won!</string>
-    <string name="win_text" tools:ignore="PluralsCandidate">Deal #%1$d solved. Moves: %2$d.</string>
+    <string name="win_text" tools:ignore="PluralsCandidate">Deal #%1$d solved. Moves: %2$d. Time: %3$s.</string>
     <string name="win_new_game">New game</string>
     <string name="close">Close</string>
 </resources>
