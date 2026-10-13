@@ -6,11 +6,13 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.lifecycle.Lifecycle
@@ -57,9 +59,7 @@ class GameScreenTest {
     private fun launch(saved: String? = null) {
         saved?.let { saveFile.writeText(it) }
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("Game #", substring = true)).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasTestTag(ELAPSED_TAG)).fetchSemanticsNodes().isNotEmpty() }
     }
 
     private fun savedGame(): Game? = if (saveFile.exists()) Game.fromJson(saveFile.readText()) else null
@@ -85,20 +85,27 @@ class GameScreenTest {
 
     private fun clock() = compose.onNodeWithTag(ELAPSED_TAG)
 
+    /** The deal number is only shown in the pause dialog, so this opens it to look. */
+    private fun assertGameNumber(number: Long) {
+        compose.onNodeWithText("Pause").performClick()
+        inDialog("Game #$number").assertExists()
+        inDialog("Resume").performClick()
+    }
+
     @Test
     fun aFirstStartDealsARandomGameAndSavesIt() {
         launch()
         waitForSave { it.moveCount == 0 }
         val number = savedGame()!!.dealNumber
         assertTrue(number in 1..GameViewModel.MAX_RANDOM_DEAL)
-        compose.onNodeWithText("Game #$number").assertExists()
+        assertGameNumber(number)
         compose.onNodeWithText("Undo").assertIsNotEnabled()
     }
 
     @Test
     fun aSavedGameIsPickedUpWhereItWasLeft() {
         launch("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}]}""")
-        compose.onNodeWithText("Game #1").assertExists()
+        assertGameNumber(1)
         compose.onNodeWithText("Undo").assertIsEnabled()
         val threeOfDiamonds = compose.onNodeWithTag("3D").fetchSemanticsNode().boundsInRoot
         val fourOfSpades = compose.onNodeWithTag("4S").fetchSemanticsNode().boundsInRoot
@@ -132,8 +139,23 @@ class GameScreenTest {
         launch("""{"dealNumber":1}""")
         tap("3D")
         scenario!!.recreate()
-        compose.onNodeWithText("Game #1").assertExists()
+        assertGameNumber(1)
         compose.onNodeWithText("Undo").assertIsEnabled()
+    }
+
+    @Test
+    fun theBarSitsUnderTheBoardWithTheClockInItsMiddle() {
+        launch("""{"dealNumber":1}""")
+        val screen = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val time = clock().fetchSemanticsNode().boundsInRoot
+        assertEquals(screen.center.x, time.center.x, 1f)
+
+        val lowestCard = compose.onNodeWithTag("3D").fetchSemanticsNode().boundsInRoot
+        for (button in listOf("Undo", "Restart", "New", "Pause")) {
+            val bounds = compose.onNodeWithText(button).fetchSemanticsNode().boundsInRoot
+            assertTrue(bounds.top > lowestCard.bottom)
+            assertTrue(if (button in listOf("Undo", "Restart")) bounds.right < time.left else bounds.left > time.right)
+        }
     }
 
     @Test
@@ -204,6 +226,38 @@ class GameScreenTest {
         clock().assertTextEquals("01:03")
         letPass(seconds = 1)
         clock().assertTextEquals("01:04")
+    }
+
+    @Test
+    fun pauseStopsTheClockSavesItsTimeAndShowsTheGameNumber() {
+        launch("""{"dealNumber":617,"elapsedMillis":60000}""")
+        letPass(seconds = 3)
+
+        compose.onNodeWithText("Pause").performClick()
+        inDialog("Paused").assertExists()
+        inDialog("Game #617").assertExists()
+        inDialog("Time: 01:03").assertExists()
+        waitForSave { it.elapsedMillis in 63_000..63_999 }
+        letPass(seconds = 300)
+        inDialog("Time: 01:03").assertExists()
+
+        inDialog("Resume").performClick()
+        compose.onNodeWithText("Paused").assertDoesNotExist()
+        clock().assertTextEquals("01:03")
+        letPass(seconds = 1)
+        clock().assertTextEquals("01:04")
+    }
+
+    @Test
+    fun aPausedGameStaysPausedWhenTheAppComesBack() {
+        launch("""{"dealNumber":1,"elapsedMillis":60000}""")
+        compose.onNodeWithText("Pause").performClick()
+        compose.waitForIdle()
+
+        scenario!!.moveToState(Lifecycle.State.CREATED)
+        scenario!!.moveToState(Lifecycle.State.RESUMED)
+        letPass(seconds = 30)
+        inDialog("Time: 01:00").assertExists()
     }
 
     @Test

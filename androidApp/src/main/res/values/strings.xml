@@ -6,10 +6,16 @@
     <string name="undo">Undo</string>
     <string name="restart">Restart</string>
     <string name="new_game">New</string>
+    <string name="pause">Pause</string>
+
+    <string name="pause_title">Paused</string>
+    <string name="pause_time">Time: %1$s</string>
+    <string name="resume">Resume</string>
 
     <string name="new_game_title">New game</string>
     <string name="deal_number_label">Deal number</string>
     <string name="deal">Deal</string>
+    <string name="random_deal">Random deal</string>
     <string name="cancel">Cancel</string>
 
     <string name="restart_title">Restart this deal?</string>

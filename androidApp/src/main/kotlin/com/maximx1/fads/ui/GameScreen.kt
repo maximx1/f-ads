@@ -2,6 +2,7 @@ package com.maximx1.fads.ui
 
 import android.text.format.DateUtils
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -40,7 +41,7 @@ import com.maximx1.fads.R
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.game.GameViewModel
 
-private enum class Prompt { NONE, NEW_GAME, RESTART }
+private enum class Prompt { NONE, PAUSED, NEW_GAME, RESTART }
 
 @Composable
 fun GameScreen(viewModel: GameViewModel = viewModel(factory = GameViewModel.Factory)) {
@@ -48,8 +49,10 @@ fun GameScreen(viewModel: GameViewModel = viewModel(factory = GameViewModel.Fact
     val elapsedSeconds by viewModel.elapsedSeconds.collectAsStateWithLifecycle()
     var prompt by rememberSaveable { mutableStateOf(Prompt.NONE) }
 
-    LifecycleStartEffect(viewModel) {
-        viewModel.onScreen(true)
+    // The clock stops behind the pause dialog just as it does when the app goes out of sight.
+    val paused = prompt == Prompt.PAUSED
+    LifecycleStartEffect(viewModel, paused) {
+        viewModel.onScreen(!paused)
         onStopOrDispose { viewModel.onScreen(false) }
     }
 
@@ -62,18 +65,24 @@ fun GameScreen(viewModel: GameViewModel = viewModel(factory = GameViewModel.Fact
             .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout)),
     ) {
         val current = game ?: return@Column
-        TopBar(
-            game = current,
-            elapsedSeconds = elapsedSeconds,
-            onUndo = viewModel::undo,
-            onRestart = { prompt = Prompt.RESTART },
-            onNewGame = { prompt = Prompt.NEW_GAME },
+        Board(
+            state = current.state,
+            onMove = viewModel::play,
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(top = BoardTopGap),
         )
-        Board(state = current.state, onMove = viewModel::play, modifier = Modifier.weight(1f).fillMaxWidth())
+        BottomBar(game = current, elapsedSeconds = elapsedSeconds, onUndo = viewModel::undo, onPrompt = { prompt = it })
     }
 
     val current = game ?: return
     when (prompt) {
+        Prompt.PAUSED -> {
+            PauseDialog(
+                dealNumber = current.dealNumber,
+                elapsedSeconds = elapsedSeconds,
+                onResume = { prompt = Prompt.NONE },
+            )
+        }
+
         Prompt.NEW_GAME -> {
             NewGameDialog(
                 onDeal = {
@@ -101,42 +110,63 @@ fun GameScreen(viewModel: GameViewModel = viewModel(factory = GameViewModel.Fact
     }
 }
 
+/** Undo and Restart on the left, New and Pause on the right, and the clock between them. */
 @Composable
-private fun TopBar(
+private fun BottomBar(
     game: Game,
     elapsedSeconds: Long,
     onUndo: () -> Unit,
-    onRestart: () -> Unit,
-    onNewGame: () -> Unit,
+    onPrompt: (Prompt) -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.game_number, game.dealNumber),
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = DateUtils.formatElapsedTime(elapsedSeconds),
-                color = Color.White.copy(alpha = DETAIL_ALPHA),
-                // Digits of equal width, so the time does not shuffle sideways as it counts.
-                style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                modifier = Modifier.testTag(ELAPSED_TAG),
-            )
+    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        // Equal shares either side keep the clock in the middle, whatever the widths of the buttons.
+        Row(Modifier.weight(1f)) {
+            TextButton(onClick = onUndo, enabled = game.canUndo) { Text(stringResource(R.string.undo)) }
+            TextButton(onClick = { onPrompt(Prompt.RESTART) }, enabled = game.canUndo) {
+                Text(stringResource(R.string.restart))
+            }
         }
-        TextButton(onClick = onUndo, enabled = game.canUndo) { Text(stringResource(R.string.undo)) }
-        TextButton(onClick = onRestart, enabled = game.canUndo) { Text(stringResource(R.string.restart)) }
-        TextButton(onClick = onNewGame) { Text(stringResource(R.string.new_game)) }
+        Text(
+            text = DateUtils.formatElapsedTime(elapsedSeconds),
+            color = Color.White,
+            // Digits of equal width, so the time does not shuffle sideways as it counts.
+            style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+            modifier = Modifier.testTag(ELAPSED_TAG),
+        )
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = { onPrompt(Prompt.NEW_GAME) }) { Text(stringResource(R.string.new_game)) }
+            TextButton(onClick = { onPrompt(Prompt.PAUSED) }) { Text(stringResource(R.string.pause)) }
+        }
     }
 }
 
-/** Offers a random deal number, which the player can replace with any number they like. */
+/** Up while the player has stopped the clock. It is also the one place that names the deal on the table. */
+@Composable
+private fun PauseDialog(
+    dealNumber: Long,
+    elapsedSeconds: Long,
+    onResume: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onResume,
+        title = { Text(stringResource(R.string.pause_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.game_number, dealNumber), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.pause_time, DateUtils.formatElapsedTime(elapsedSeconds)))
+            }
+        },
+        confirmButton = { TextButton(onClick = onResume) { Text(stringResource(R.string.resume)) } },
+    )
+}
+
+/** Deals a random game, or the one whose number the player types. */
 @Composable
 private fun NewGameDialog(
     onDeal: (Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var text by rememberSaveable { mutableStateOf(GameViewModel.randomDealNumber().toString()) }
+    var text by rememberSaveable { mutableStateOf("") }
     val number = text.toLongOrNull()
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -156,7 +186,12 @@ private fun NewGameDialog(
                 Text(stringResource(R.string.deal))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = { onDeal(GameViewModel.randomDealNumber()) }) {
+                Text(stringResource(R.string.random_deal))
+            }
+        },
     )
 }
 
@@ -197,6 +232,6 @@ private fun WinDialog(
 
 // 18 digits always fits in a Long.
 private const val MAX_DEAL_DIGITS = 18
-private const val DETAIL_ALPHA = 0.7f
+private val BoardTopGap = 8.dp
 
 internal const val ELAPSED_TAG = "elapsed"

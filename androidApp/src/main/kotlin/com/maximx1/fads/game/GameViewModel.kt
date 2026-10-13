@@ -31,7 +31,7 @@ class GameViewModel(
 
     /**
      * Whole seconds on the game's clock. The clock runs from the first move until the game is won, and only
-     * while the game is [onScreen].
+     * while the game is [onScreen] and not paused.
      */
     val elapsedSeconds: StateFlow<Long> = seconds.asStateFlow()
 
@@ -51,7 +51,10 @@ class GameViewModel(
         }
     }
 
-    /** Tells the clock whether the player can see the game. Going out of sight also saves the time so far. */
+    /**
+     * Tells the clock whether the player is at the game: it is in sight and not paused. Leaving also saves the
+     * time so far.
+     */
     fun onScreen(visible: Boolean) {
         this.visible = visible
         change { it }
