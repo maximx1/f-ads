@@ -106,8 +106,9 @@ class BoardTest {
 
     private fun layout(): BoardLayout {
         val root = compose.onRoot().fetchSemanticsNode().size
-        val gap = with(compose.density) { slotGap(root.width.toFloat(), root.height.toFloat()).toPx() }
-        return BoardLayout(root.width.toFloat(), root.height.toFloat(), gap, state.columns.map { it.size })
+        val gap = with(compose.density) { 4.dp.toPx() }
+        val split = with(compose.density) { 2.dp.toPx() }
+        return BoardLayout(root.width.toFloat(), root.height.toFloat(), gap, split, state.columns.map { it.size })
     }
 
     @Test
@@ -195,15 +196,6 @@ class BoardTest {
         show(position("KS 7H", "8D"))
         drag("7H", layout().columnBase(5) + layout().cardCentre)
         assertEquals(listOf<Move>(Move.ColumnToColumn(0, 5)), moves)
-    }
-
-    @Test
-    fun anUprightBoardKeepsItsCardsALittleFurtherApartThanOneOnItsSide() {
-        assertEquals(6.dp, slotGap(width = 1233f, height = 2673f))
-        assertEquals(4.dp, slotGap(width = 2673f, height = 1233f))
-        show()
-        val gap = with(compose.density) { 6.dp.toPx() }
-        assertEquals(gap, bounds("9S").left - bounds("7H").right, 1f)
     }
 
     @Test

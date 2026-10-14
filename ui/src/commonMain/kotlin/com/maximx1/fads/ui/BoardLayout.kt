@@ -1,8 +1,6 @@
 package com.maximx1.fads.ui
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.model.Card
 import com.maximx1.fads.core.model.Suit
 import com.maximx1.fads.core.rules.Move
@@ -100,20 +98,12 @@ fun BoardLayout.landing(
     }
 
 /**
- * The space between neighbouring cards for a board of this size. An upright board gets a little more, so the
- * free cells and the foundations do not sit quite so close together.
- */
-fun slotGap(
-    width: Float,
-    height: Float,
-): Dp = if (height > width) UprightGap else SidewaysGap
-
-private val UprightGap = 6.dp
-private val SidewaysGap = 4.dp
-
-/**
  * The geometry of the board, in pixels, for a given area. Free cells and foundations share the top row; the
  * eight columns hang below, each lined up under one slot of the top row.
+ *
+ * When the area is taller than it is wide, the free cells and the foundations stand [split] further apart than
+ * neighbouring slots do. The room comes from inside the two groups, whose slots sit a touch closer together, so
+ * the outermost ones stay over the first and last columns.
  *
  * The cards are as wide as the area allows, unless that would leave too little height for the columns (a phone
  * on its side), in which case they shrink and the board is centred. Long columns squeeze their cards together
@@ -123,6 +113,7 @@ class BoardLayout(
     width: Float,
     height: Float,
     private val gap: Float,
+    split: Float,
     private val columnSizes: List<Int>,
 ) {
     val cardWidth: Float =
@@ -136,12 +127,18 @@ class BoardLayout(
     private val columnsTop = gap + cardHeight + gap * 2
     private val columnRoom = (height - gap - columnsTop - cardHeight).coerceAtLeast(0f)
 
+    // How much closer each top-row slot sits to its neighbour in the same group. Kept to what the gap can give,
+    // so every slot still lies inside its own column's share of the row and [targetAt] needs no special case.
+    private val pinch = if (height > width) min(split, gap) / (SLOTS - 2) else 0f
+
     val cardCentre: Offset get() = Offset(cardWidth / 2, cardHeight / 2)
 
-    fun freeCell(index: Int): Offset = Offset(slotLeft(index), gap)
+    fun freeCell(index: Int): Offset = Offset(slotLeft(index) - index * pinch, gap)
 
-    fun foundation(suit: Suit): Offset =
-        Offset(slotLeft(GameState.FREE_CELL_COUNT + FoundationOrder.indexOf(suit)), gap)
+    fun foundation(suit: Suit): Offset {
+        val slot = GameState.FREE_CELL_COUNT + FoundationOrder.indexOf(suit)
+        return Offset(slotLeft(slot) + (SLOTS - 1 - slot) * pinch, gap)
+    }
 
     fun columnBase(column: Int): Offset = Offset(slotLeft(column), columnsTop)
 

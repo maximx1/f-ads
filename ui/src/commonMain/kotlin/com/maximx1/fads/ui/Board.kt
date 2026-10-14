@@ -95,8 +95,9 @@ fun Board(
         val height = constraints.maxHeight.toFloat()
         val layout =
             remember(width, height, density, state) {
-                val gap = with(density) { slotGap(width, height).toPx() }
-                BoardLayout(width, height, gap, state.columns.map { it.size })
+                with(density) {
+                    BoardLayout(width, height, SlotGap.toPx(), GroupSplit.toPx(), state.columns.map { it.size })
+                }
             }
         val spots = remember(state) { state.spots() }
         // A hint left over from another position points at nothing.
@@ -305,6 +306,8 @@ private fun DrawScope.drawSlots(
     }
 }
 
+private val SlotGap = 4.dp
+private val GroupSplit = 2.dp
 private val SlotColor = Color(0x40FFFFFF)
 private val HintColor = Color(0xFFFFE082)
 
