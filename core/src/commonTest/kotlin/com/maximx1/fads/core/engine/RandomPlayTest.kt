@@ -3,6 +3,7 @@ package com.maximx1.fads.core.engine
 import com.maximx1.fads.core.deal.Deal
 import com.maximx1.fads.core.deal.SplitMix64
 import com.maximx1.fads.core.model.Card
+import com.maximx1.fads.core.model.Suit
 import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.rules.canMove
 import com.maximx1.fads.core.rules.legalMoves
@@ -51,6 +52,10 @@ class RandomPlayTest {
                 for (a in indexes) {
                     add(Move.ColumnToFoundation(a))
                     add(Move.FreeCellToFoundation(a))
+                    for (suit in Suit.entries) {
+                        add(Move.FoundationToColumn(suit, a))
+                        add(Move.FoundationToFreeCell(suit, a))
+                    }
                     for (b in indexes) {
                         add(Move.ColumnToFreeCell(a, b))
                         add(Move.FreeCellToColumn(a, b))

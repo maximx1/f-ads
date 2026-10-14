@@ -56,11 +56,15 @@ class SerializationTest {
                         Move.ColumnToFoundation(4),
                         Move.FreeCellToColumn(3, 5),
                         Move.FreeCellToFoundation(0),
+                        Move.FoundationToColumn(Suit.HEARTS, 6),
+                        Move.FoundationToFreeCell(Suit.CLUBS, 1),
                     ),
+                movesMade = 9,
             )
         val json =
             """{"dealNumber":7,"moves":[{"type":"cc","from":0,"to":1,"count":2},{"type":"cf","from":2,"cell":3},""" +
-                """{"type":"ch","from":4},{"type":"fc","cell":3,"to":5},{"type":"fh","cell":0}]}"""
+                """{"type":"ch","from":4},{"type":"fc","cell":3,"to":5},{"type":"fh","cell":0},""" +
+                """{"type":"hc","suit":"HEARTS","to":6},{"type":"hf","suit":"CLUBS","cell":1}],"movesMade":9}"""
         assertEquals(json, Json.encodeToString(record))
         assertEquals(record, Json.decodeFromString<GameRecord>(json))
     }

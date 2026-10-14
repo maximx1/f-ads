@@ -29,9 +29,13 @@ fun interface CardStyle {
 }
 
 @Composable
-fun rememberPlaceholderCardStyle(): CardStyle {
+fun rememberPlaceholderCardStyle(): CardStyle = rememberCardStyle(::PlaceholderCardStyle)
+
+/** Builds a card style around a text measurer, which every style needs to draw the ranks. */
+@Composable
+fun rememberCardStyle(create: (TextMeasurer) -> CardStyle): CardStyle {
     val measurer = rememberTextMeasurer(cacheSize = TEXT_CACHE_SIZE)
-    return remember(measurer) { PlaceholderCardStyle(measurer) }
+    return remember(measurer, create) { create(measurer) }
 }
 
 /** Plain cards drawn in code: the rank as text, the suit as a simple shape. */
@@ -44,19 +48,7 @@ class PlaceholderCardStyle(
         drawRoundRect(Face, cornerRadius = corner)
         drawRoundRect(Edge, cornerRadius = corner, style = Stroke(width * EDGE_WIDTH))
 
-        val ink = if (card.color == SuitColor.RED) Red else Black
-        val pad = width * PADDING
-        val rank =
-            measurer.measure(
-                text = card.rank.label,
-                style = TextStyle(color = ink, fontSize = (width * RANK_SIZE).toSp(), fontWeight = FontWeight.Bold),
-            )
-        drawText(rank, topLeft = Offset(pad, 0f))
-
-        val small = width * CORNER_SUIT
-        drawSuit(card.suit, ink, Offset(width - pad - small, pad), small)
-        val centre = width * CENTRE_SUIT
-        drawSuit(card.suit, ink, Offset((width - centre) / 2, size.height - centre - pad * 2), centre)
+        drawPips(measurer, card, TextStyle(color = if (card.color == SuitColor.RED) Red else Black))
     }
 
     private companion object {
@@ -68,11 +60,31 @@ class PlaceholderCardStyle(
         // All sizes are fractions of the card's width, so cards look the same at any size.
         const val CORNER = 0.09f
         const val EDGE_WIDTH = 0.015f
-        const val PADDING = 0.08f
-        const val RANK_SIZE = 0.36f
-        const val CORNER_SUIT = 0.28f
-        const val CENTRE_SUIT = 0.56f
     }
+}
+
+/**
+ * Draws what every card face has, whatever its style: the rank top left, a small suit top right and a large one
+ * below. [ink] gives the colour, and may add a font or a shadow.
+ */
+fun DrawScope.drawPips(
+    measurer: TextMeasurer,
+    card: Card,
+    ink: TextStyle,
+) {
+    val width = size.width
+    val pad = width * PADDING
+    val rank =
+        measurer.measure(
+            text = card.rank.label,
+            style = ink.merge(fontSize = (width * RANK_SIZE).toSp(), fontWeight = FontWeight.Bold),
+        )
+    drawText(rank, topLeft = Offset(pad, 0f))
+
+    val small = width * CORNER_SUIT
+    drawSuit(card.suit, ink.color, Offset(width - pad - small, pad), small)
+    val centre = width * CENTRE_SUIT
+    drawSuit(card.suit, ink.color, Offset((width - centre) / 2, size.height - centre - pad * 2), centre)
 }
 
 /** Draws a suit shape in a square of side [size] whose top-left corner is at [topLeft]. */
@@ -130,3 +142,9 @@ private object SuitShapes {
 }
 
 private const val TEXT_CACHE_SIZE = 32
+
+// Fractions of the card's width.
+private const val PADDING = 0.08f
+private const val RANK_SIZE = 0.36f
+private const val CORNER_SUIT = 0.28f
+private const val CENTRE_SUIT = 0.56f

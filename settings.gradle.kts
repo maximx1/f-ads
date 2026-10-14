@@ -23,4 +23,6 @@ dependencyResolutionManagement {
 rootProject.name = "f-ads"
 
 include(":core")
+include(":ui")
 include(":androidApp")
+include(":desktopApp")

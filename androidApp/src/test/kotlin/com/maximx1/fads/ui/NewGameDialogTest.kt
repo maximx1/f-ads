@@ -2,18 +2,22 @@ package com.maximx1.fads.ui
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ActivityScenario
 import com.maximx1.fads.MainActivity
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.game.GameViewModel
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -39,8 +43,10 @@ class NewGameDialogTest {
     fun openTheDialogOnASavedGame() {
         saveFile.writeText("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}]}""")
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Game #1")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("New").performClick()
+        compose.waitUntil(
+            TIMEOUT,
+        ) { compose.onAllNodes(hasContentDescription("New")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("New").performClick()
     }
 
     @After
@@ -52,11 +58,22 @@ class NewGameDialogTest {
 
     private fun savedGame(): Game? = Game.fromJson(saveFile.readText())
 
+    /** The deal number is only shown in the pause dialog, so this opens it to look. */
+    private fun assertGameNumber(number: Long) {
+        compose.onNodeWithContentDescription("Pause").performClick()
+        inDialog("Game #$number").assertExists()
+        inDialog("Resume").performClick()
+    }
+
     @Test
-    fun itOffersARandomDealNumberThatCanJustBeDealt() {
-        inDialog("Deal").performClick()
+    fun itDealsARandomGameWithoutANumberBeingTyped() {
+        inDialog("Deal").assertIsNotEnabled()
+        inDialog("Random deal").performClick()
+
         compose.waitUntil(TIMEOUT) { savedGame()?.moveCount == 0 }
-        compose.onNodeWithText("Game #${savedGame()!!.dealNumber}").assertExists()
+        val number = savedGame()!!.dealNumber
+        assertTrue(number in 1..GameViewModel.MAX_RANDOM_DEAL)
+        assertGameNumber(number)
     }
 
     @Test
@@ -64,7 +81,7 @@ class NewGameDialogTest {
         compose.onNode(hasSetTextAction()).performTextReplacement("617")
         inDialog("Deal").performClick()
 
-        compose.onNodeWithText("Game #617").assertExists()
+        assertGameNumber(617)
         compose.waitUntil(TIMEOUT) { savedGame()?.let { it.dealNumber == 617L && it.moveCount == 0 } == true }
     }
 
@@ -72,7 +89,7 @@ class NewGameDialogTest {
     fun onlyDigitsAreKept() {
         compose.onNode(hasSetTextAction()).performTextReplacement("6a1-7 ")
         inDialog("Deal").performClick()
-        compose.onNodeWithText("Game #617").assertExists()
+        assertGameNumber(617)
     }
 
     @Test
@@ -81,7 +98,7 @@ class NewGameDialogTest {
         inDialog("Deal").assertIsNotEnabled()
         inDialog("Cancel").performClick()
 
-        compose.onNodeWithText("Game #1").assertExists()
+        assertGameNumber(1)
         assertEquals(1, savedGame()?.moveCount)
     }
 

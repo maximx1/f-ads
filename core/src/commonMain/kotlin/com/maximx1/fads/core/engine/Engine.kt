@@ -30,6 +30,14 @@ fun GameState.play(move: Move): GameState {
         is Move.FreeCellToFoundation -> {
             withOneMoreOn(freeCells.getValue(move.cell).suit).withFreeCell(move.cell, null)
         }
+
+        is Move.FoundationToColumn -> {
+            withColumn(move.to, columns[move.to] + checkNotNull(foundationTop(move.suit))).withOneFewerOn(move.suit)
+        }
+
+        is Move.FoundationToFreeCell -> {
+            withFreeCell(move.cell, foundationTop(move.suit)).withOneFewerOn(move.suit)
+        }
     }
 }
 
@@ -49,5 +57,10 @@ private fun GameState.withFreeCell(
 
 private fun GameState.withOneMoreOn(suit: Suit): GameState {
     val counts = foundations + (suit to foundationCount(suit) + 1)
+    return copy(foundations = counts)
+}
+
+private fun GameState.withOneFewerOn(suit: Suit): GameState {
+    val counts = foundations + (suit to foundationCount(suit) - 1)
     return copy(foundations = counts)
 }

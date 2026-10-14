@@ -1,6 +1,7 @@
 package com.maximx1.fads.core.rules
 
 import com.maximx1.fads.core.model.Card
+import com.maximx1.fads.core.model.Suit
 import com.maximx1.fads.core.state.GameState
 
 /** Tableau rule: one rank lower and the opposite colour. */
@@ -26,12 +27,17 @@ fun GameState.canMove(move: Move): Boolean =
     when (move) {
         is Move.ColumnToColumn -> canMoveRun(move)
         is Move.ColumnToFreeCell -> topOfColumn(move.from) != null && isEmptyFreeCell(move.cell)
-        is Move.ColumnToFoundation -> topOfColumn(move.from)?.let { canPlayToFoundation(it) } ?: false
-        is Move.FreeCellToColumn -> freeCells.getOrNull(move.cell)?.let { canLandOn(move.to, it) } ?: false
-        is Move.FreeCellToFoundation -> freeCells.getOrNull(move.cell)?.let { canPlayToFoundation(it) } ?: false
+        is Move.ColumnToFoundation -> topOfColumn(move.from).let { it != null && canPlayToFoundation(it) }
+        is Move.FreeCellToColumn -> canLandOn(move.to, freeCells.getOrNull(move.cell))
+        is Move.FreeCellToFoundation -> freeCells.getOrNull(move.cell).let { it != null && canPlayToFoundation(it) }
+        is Move.FoundationToColumn -> canLandOn(move.to, foundationTop(move.suit))
+        is Move.FoundationToFreeCell -> foundationTop(move.suit) != null && isEmptyFreeCell(move.cell)
     }
 
-/** Every legal move in this position. Empty when the game is won or stuck. */
+/**
+ * Every legal move in this position. A card can always come back off a foundation into an empty free cell or
+ * column, so the list is only empty when no card can move and nothing has been played to a foundation yet.
+ */
 fun GameState.legalMoves(): List<Move> =
     buildList {
         for (from in columns.indices) {
@@ -45,16 +51,24 @@ fun GameState.legalMoves(): List<Move> =
             add(Move.FreeCellToFoundation(cell))
             columns.indices.mapTo(this) { Move.FreeCellToColumn(cell, it) }
         }
+        for (suit in Suit.entries) {
+            columns.indices.mapTo(this) { Move.FoundationToColumn(suit, it) }
+            freeCells.indices.mapTo(this) { Move.FoundationToFreeCell(suit, it) }
+        }
     }.filter { canMove(it) }
 
 private fun GameState.topOfColumn(index: Int): Card? = columns.getOrNull(index)?.lastOrNull()
 
 private fun GameState.isEmptyFreeCell(index: Int): Boolean = index in freeCells.indices && freeCells[index] == null
 
+/** False for no card at all, so callers can pass whatever they found at the place the move starts from. */
 private fun GameState.canLandOn(
     column: Int,
-    card: Card,
-): Boolean = columns.getOrNull(column)?.let { it.isEmpty() || card.canStackOn(it.last()) } ?: false
+    card: Card?,
+): Boolean {
+    val cards = columns.getOrNull(column)
+    return card != null && cards != null && (cards.isEmpty() || card.canStackOn(cards.last()))
+}
 
 private fun GameState.canMoveRun(move: Move.ColumnToColumn): Boolean {
     val source = columns.getOrNull(move.from).orEmpty()

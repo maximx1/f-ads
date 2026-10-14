@@ -41,15 +41,13 @@ android {
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":ui"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.compose.material3)
-    implementation(libs.compose.ui.tooling.preview)
-    debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 
     testImplementation(platform(libs.compose.bom))

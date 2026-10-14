@@ -5,6 +5,8 @@ import com.maximx1.fads.core.position
 import com.maximx1.fads.core.rules.Move.ColumnToColumn
 import com.maximx1.fads.core.rules.Move.ColumnToFoundation
 import com.maximx1.fads.core.rules.Move.ColumnToFreeCell
+import com.maximx1.fads.core.rules.Move.FoundationToColumn
+import com.maximx1.fads.core.rules.Move.FoundationToFreeCell
 import com.maximx1.fads.core.rules.Move.FreeCellToColumn
 import com.maximx1.fads.core.rules.Move.FreeCellToFoundation
 import kotlin.test.Test
@@ -102,6 +104,24 @@ class MoveLegalityTest {
     }
 
     @Test
+    fun backFromAFoundation() {
+        val state =
+            position("KS 3S", "KD 3D", "", free = "- 9C", foundations = mapOf(Suit.HEARTS to 2, Suit.CLUBS to 0))
+        assertTrue(state.canMove(FoundationToColumn(Suit.HEARTS, 0)), "2H goes on 3S")
+        assertFalse(state.canMove(FoundationToColumn(Suit.HEARTS, 1)), "same colour")
+        assertTrue(state.canMove(FoundationToColumn(Suit.HEARTS, 2)), "empty column")
+        assertFalse(state.canMove(FoundationToColumn(Suit.CLUBS, 2)), "nothing on that foundation")
+        assertFalse(state.canMove(FoundationToColumn(Suit.SPADES, 2)), "nothing on that foundation")
+        assertFalse(state.canMove(FoundationToColumn(Suit.HEARTS, 8)))
+        assertFalse(state.canMove(FoundationToColumn(Suit.HEARTS, -1)))
+
+        assertTrue(state.canMove(FoundationToFreeCell(Suit.HEARTS, 0)))
+        assertFalse(state.canMove(FoundationToFreeCell(Suit.HEARTS, 1)), "cell is taken")
+        assertFalse(state.canMove(FoundationToFreeCell(Suit.SPADES, 0)), "nothing on that foundation")
+        assertFalse(state.canMove(FoundationToFreeCell(Suit.HEARTS, 4)))
+    }
+
+    @Test
     fun legalMovesListsExactlyTheLegalOnes() {
         val state = position("8S 7H", "8D", "AS", "KC", "KD", "KH", "KS", "QD", free = "2H 3H 4H 5H")
         assertEquals(
@@ -111,7 +131,25 @@ class MoveLegalityTest {
     }
 
     @Test
-    fun aWonGameHasNoMovesLeft() {
-        assertEquals(emptyList(), position(foundations = Suit.entries.associateWith { 13 }).legalMoves())
+    fun legalMovesIncludeTakingCardsBackOffTheFoundations() {
+        val columns = arrayOf("8S", "8D", "3S", "KC", "KD", "KH", "KS", "QD")
+        val state = position(*columns, free = "2C 3C 4C -", foundations = mapOf(Suit.HEARTS to 2))
+        assertEquals(
+            setOf(FoundationToColumn(Suit.HEARTS, 2), FoundationToFreeCell(Suit.HEARTS, 3)),
+            state.legalMoves().filter { it is FoundationToColumn || it is FoundationToFreeCell }.toSet(),
+        )
+    }
+
+    @Test
+    fun aWonGameCanOnlyTakeItsKingsBack() {
+        val moves = position(foundations = Suit.entries.associateWith { 13 }).legalMoves()
+        assertEquals(Suit.entries.size * (8 + 4), moves.size)
+        assertTrue(moves.all { it is FoundationToColumn || it is FoundationToFreeCell })
+    }
+
+    @Test
+    fun aGameWithNothingToMoveAndNothingPlayedHasNoMoves() {
+        val columns = arrayOf("KS 2S", "KH 2H", "KD 2D", "KC 2C", "QS", "QH", "QD", "QC")
+        assertEquals(emptyList(), position(*columns, free = "5S 5H 5D 5C").legalMoves())
     }
 }

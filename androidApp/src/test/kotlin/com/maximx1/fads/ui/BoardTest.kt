@@ -20,6 +20,7 @@ import com.maximx1.fads.core.model.Suit
 import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.state.GameState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -106,7 +107,8 @@ class BoardTest {
     private fun layout(): BoardLayout {
         val root = compose.onRoot().fetchSemanticsNode().size
         val gap = with(compose.density) { 4.dp.toPx() }
-        return BoardLayout(root.width.toFloat(), root.height.toFloat(), gap, state.columns.map { it.size })
+        val split = with(compose.density) { 2.dp.toPx() }
+        return BoardLayout(root.width.toFloat(), root.height.toFloat(), gap, split, state.columns.map { it.size })
     }
 
     @Test
@@ -197,11 +199,54 @@ class BoardTest {
     }
 
     @Test
-    fun cardsOnAFoundationStayPut() {
+    fun aHintMarksWhereItsCardWouldLand() {
+        state = Deal.fromNumber(1)
+        compose.setContent {
+            Board(state, onMove = {}, Modifier.fillMaxSize(), marks = BoardMarks(hint = Move.ColumnToColumn(0, 4)))
+        }
+        compose.waitForIdle()
+        val landing = compose.onNodeWithTag(HINT_TAG).fetchSemanticsNode().boundsInRoot
+        assertEquals(bounds("4S").left, landing.left)
+        assertTrue(landing.top > bounds("4S").top)
+    }
+
+    @Test
+    fun aHintThatIsNotLegalHereIsNotShown() {
+        state = Deal.fromNumber(1)
+        compose.setContent {
+            Board(state, onMove = {}, Modifier.fillMaxSize(), marks = BoardMarks(hint = Move.ColumnToFoundation(0)))
+        }
+        compose.onNodeWithTag(HINT_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun tappingACardOnAFoundationDoesNothing() {
         show(position("KS", foundations = mapOf(Suit.HEARTS to 1)))
         tap("AH")
-        drag("AH", layout().columnBase(3) + layout().cardCentre)
         assertEquals(emptyList<Move>(), moves)
+    }
+
+    @Test
+    fun theTopCardOfAFoundationCanBeDraggedBackToAColumnOrAFreeCell() {
+        show(position("KS 3S", foundations = mapOf(Suit.HEARTS to 2)))
+        drag("2H", layout().columnBase(0) + grip)
+        assertEquals(listOf<Move>(Move.FoundationToColumn(Suit.HEARTS, 0)), moves)
+        assertEquals(bounds("3S").left, bounds("2H").left)
+
+        drag("AH", layout().freeCell(1) + grip)
+        assertEquals(Move.FoundationToFreeCell(Suit.HEARTS, 1), moves.last())
+        assertEquals(layout().freeCell(1).round(), bounds("AH").topLeft.round())
+        assertEquals(0, state.foundationCount(Suit.HEARTS))
+    }
+
+    @Test
+    fun aCardDraggedOffAFoundationToWhereItDoesNotFitSlidesBack() {
+        show(position("KS 3D", foundations = mapOf(Suit.HEARTS to 2)))
+        val before = bounds("2H")
+        drag("2H", layout().columnBase(0) + grip)
+        drag("2H", layout().foundation(Suit.SPADES) + grip)
+        assertEquals(emptyList<Move>(), moves)
+        assertEquals(before, bounds("2H"))
     }
 
     private companion object {
