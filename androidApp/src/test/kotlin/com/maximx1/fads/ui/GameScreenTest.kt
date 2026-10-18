@@ -23,8 +23,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximx1.fads.MainActivity
-import com.maximx1.fads.core.engine.BestTimes
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.Records
+import com.maximx1.fads.core.engine.score
 import com.maximx1.fads.game.FileStorage
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.ui.theme.TableTheme
@@ -216,13 +217,16 @@ class GameScreenTest {
     }
 
     @Test
-    fun hintPointsOutAMoveUntilAMoveIsMadeAndCountsForNothing() {
+    fun hintPointsOutAMoveUntilAMoveIsMadeAndCostsPointsButNoMove() {
         launch("""{"dealNumber":1}""")
         compose.onNodeWithTag(HINT_TAG).assertDoesNotExist()
         compose.onNodeWithContentDescription("Hint").performClick()
         compose.waitForIdle()
         compose.onNodeWithTag(HINT_TAG).assertExists()
         moves().assertTextEquals("Moves: 0")
+        // Asking again for the hint already showing costs nothing more.
+        compose.onNodeWithContentDescription("Hint").performClick()
+        waitForSave { it.hintsTaken == 1 }
 
         tap("3D")
         compose.onNodeWithTag(HINT_TAG).assertDoesNotExist()
@@ -272,9 +276,9 @@ class GameScreenTest {
         inDialog("Best time: 01:15").assertExists()
         inDialog("Best on this deal: 01:15").assertExists()
 
-        val bestTimes = File(RuntimeEnvironment.getApplication().filesDir, "best-times.json")
-        compose.waitUntil(TIMEOUT) { bestTimes.exists() }
-        assertEquals(1L, BestTimes.fromJson(bestTimes.readText())?.fastest?.dealNumber)
+        val records = File(RuntimeEnvironment.getApplication().filesDir, "best-times.json")
+        compose.waitUntil(TIMEOUT) { records.exists() }
+        assertEquals(1L, Records.fromJson(records.readText())?.fastest?.dealNumber)
     }
 
     @Test
@@ -320,9 +324,23 @@ class GameScreenTest {
 
         inDialog("You won!").assertExists()
         inDialog("Deal #1 solved. Moves: 131. Time: 00:00.").assertExists()
+        waitForSave { it.state.isWon }
+        inDialog("Score: ${savedGame()!!.score}").assertExists()
         inDialog("New game").performClick()
         compose.onNodeWithText("You won!").assertDoesNotExist()
         waitForSave { it.moveCount == 0 }
+    }
+
+    @Test
+    fun theScoreSitsOnTheLeftOppositeTheMoves() {
+        val oneMoveLeft = checkNotNull(javaClass.getResource("/deal-1-one-move-left.json")).readText()
+        launch(oneMoveLeft)
+        val score = compose.onNodeWithTag(SCORE_TAG)
+        score.assertTextEquals("Score: ${Game.fromJson(oneMoveLeft)!!.score}")
+        val left = score.fetchSemanticsNode().boundsInRoot
+        val right = moves().fetchSemanticsNode().boundsInRoot
+        assertTrue(left.right < clock().fetchSemanticsNode().boundsInRoot.left)
+        assertTrue(left.top < right.bottom && right.top < left.bottom)
     }
 
     @Test

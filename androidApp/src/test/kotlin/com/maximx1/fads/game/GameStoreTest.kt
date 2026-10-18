@@ -1,7 +1,7 @@
 package com.maximx1.fads.game
 
-import com.maximx1.fads.core.engine.BestTimes
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
 import com.maximx1.fads.core.rules.Move
 import kotlinx.coroutines.runBlocking
@@ -55,19 +55,19 @@ class GameStoreTest {
         }
 
     @Test
-    fun bestTimesAreKeptBesideTheGameAndStartOutEmpty() =
+    fun recordsAreKeptBesideTheGameAndStartOutEmpty() =
         runBlocking {
             val store = GameStore(FileStorage(folder.root))
-            assertEquals(BestTimes(), store.loadBestTimes())
+            assertEquals(Records(), store.loadRecords())
 
-            val times = BestTimes().with(Win(dealNumber = 617, millis = 75_000, moves = 131))
+            val times = Records().with(Win(dealNumber = 617, millis = 75_000, moves = 131))
             store.save(times)
             store.save(Game.start(617))
-            assertEquals(times, GameStore(FileStorage(folder.root)).loadBestTimes())
+            assertEquals(times, GameStore(FileStorage(folder.root)).loadRecords())
             assertEquals(Game.start(617).record, store.load()?.record)
 
-            File(folder.root, GameStore.BEST_TIMES).writeText("nonsense")
-            assertEquals(BestTimes(), store.loadBestTimes())
+            File(folder.root, GameStore.RECORDS).writeText("nonsense")
+            assertEquals(Records(), store.loadRecords())
         }
 
     @Test

@@ -2,9 +2,10 @@ package com.maximx1.fads.game
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.maximx1.fads.core.engine.BestTimes
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
+import com.maximx1.fads.core.engine.score
 import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.rules.canMove
 import kotlinx.coroutines.Job
@@ -22,6 +23,7 @@ import kotlin.random.Random
  * @param now a clock in milliseconds that only ever goes forward. Only the difference between two readings is
  * used.
  */
+@Suppress("TooManyFunctions") // One for each thing the player can do to the game, and a few to run the clock.
 class GameViewModel(
     private val store: GameStore,
     private val now: () -> Long,
@@ -31,10 +33,10 @@ class GameViewModel(
     /** The game on the table. `null` only for the moment it takes to read the saved game at start-up. */
     val game: StateFlow<Game?> = current.asStateFlow()
 
-    private val best = MutableStateFlow(BestTimes())
+    private val best = MutableStateFlow(Records())
 
-    /** The player's best times. Empty for the moment it takes to read them at start-up. */
-    val bestTimes: StateFlow<BestTimes> = best.asStateFlow()
+    /** The player's best times and scores. Empty for the moment it takes to read them at start-up. */
+    val records: StateFlow<Records> = best.asStateFlow()
 
     private val seconds = MutableStateFlow(0L)
 
@@ -55,7 +57,7 @@ class GameViewModel(
 
     init {
         viewModelScope.launch {
-            best.value = store.loadBestTimes()
+            best.value = store.loadRecords()
             show(store.load() ?: Game.start(randomDealNumber()).also { saves.send(it) })
             for (game in saves) store.save(game)
         }
@@ -73,6 +75,9 @@ class GameViewModel(
     fun play(move: Move) = change { if (it.state.canMove(move)) it.play(move) else it }
 
     fun undo() = change { it.undo() }
+
+    /** Counts a hint against the score. Showing it is up to the screen. */
+    fun takeHint() = change { it.takeHint() }
 
     fun restart() = change { it.restart() }
 
@@ -96,15 +101,15 @@ class GameViewModel(
     }
 
     /**
-     * Counts a win towards the best times. A win with nothing on the clock is left out: it can only come from a
+     * Counts a win towards the records. A win with nothing on the clock is left out: it can only come from a
      * game saved before there was a clock, and no real game could ever beat it.
      */
     private fun record(won: Game) {
         if (won.elapsedMillis <= 0) return
-        val times = best.value.with(Win(won.dealNumber, won.elapsedMillis, won.movesMade))
-        if (times === best.value) return
-        best.value = times
-        viewModelScope.launch { store.save(times) }
+        val records = best.value.with(Win(won.dealNumber, won.elapsedMillis, won.movesMade, won.score))
+        if (records === best.value) return
+        best.value = records
+        viewModelScope.launch { store.save(records) }
     }
 
     /** Stops the clock and returns [game] with the time it counted added on. */

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.score
 import com.maximx1.fads.core.rules.stuckCards
 import com.maximx1.fads.core.state.GameState
 import com.maximx1.fads.game.GameViewModel
@@ -47,7 +48,7 @@ fun GameScreen(
 ) {
     val game by viewModel.game.collectAsStateWithLifecycle()
     val elapsedSeconds by viewModel.elapsedSeconds.collectAsStateWithLifecycle()
-    val bestTimes by viewModel.bestTimes.collectAsStateWithLifecycle()
+    val records by viewModel.records.collectAsStateWithLifecycle()
     var prompt by rememberSaveable { mutableStateOf(Prompt.NONE) }
 
     // The clock stops behind the pause dialog just as it does when the app goes out of sight.
@@ -64,7 +65,7 @@ fun GameScreen(
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = settings.theme.look.accent)) {
         when (prompt) {
             Prompt.PAUSED -> {
-                PauseDialog(current, elapsedSeconds, bestTimes, settings, onResume = { prompt = Prompt.NONE })
+                PauseDialog(current, elapsedSeconds, records, settings, onResume = { prompt = Prompt.NONE })
             }
 
             Prompt.NEW_GAME -> {
@@ -89,7 +90,7 @@ fun GameScreen(
             }
 
             Prompt.NONE -> {
-                WinDialog(current, bestTimes, onNewGame = { viewModel.newGame(GameViewModel.randomDealNumber()) })
+                WinDialog(current, records, onNewGame = { viewModel.newGame(GameViewModel.randomDealNumber()) })
             }
         }
     }
@@ -144,12 +145,12 @@ private fun PlayArea(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout)),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        TopRow(elapsedSeconds, game.movesMade, look.clock)
+        TopRow(elapsedSeconds, game.score, game.movesMade, look.clock)
         Board(
             state = state,
             onMove = viewModel::play,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent) },
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(look.boardPadding),
+            paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent, look.pane) },
             marks = remember(stuck, hint) { BoardMarks(stuck, hint) },
         )
         SplitButton(
@@ -158,7 +159,11 @@ private fun PlayArea(
                     Segment(Strings.UNDO, Glyph.UNDO, game.canUndo, viewModel::undo),
                     Segment(Strings.RESTART, Glyph.RESTART, game.canUndo) { onPrompt(Prompt.RESTART) },
                     Segment(Strings.NEW_GAME, Glyph.NEW_GAME) { onPrompt(Prompt.NEW_GAME) },
-                    Segment(Strings.HINT, Glyph.HINT, suggestion != null) { hintFor = state },
+                    Segment(Strings.HINT, Glyph.HINT, suggestion != null) {
+                        // Asking again while the hint is still showing costs nothing.
+                        if (hintFor !== state) viewModel.takeHint()
+                        hintFor = state
+                    },
                     Segment(Strings.PAUSE, Glyph.PAUSE) { onPrompt(Prompt.PAUSED) },
                 ),
             look = look.buttons,
@@ -167,16 +172,22 @@ private fun PlayArea(
     }
 }
 
-/** The clock in the middle and the move count on the right. */
+/** The score on the left, the clock in the middle and the move count on the right. */
 @Composable
 private fun TopRow(
     elapsedSeconds: Long,
+    score: Int,
     movesMade: Int,
     look: ClockLook,
 ) {
     // Digits of equal width, so neither number shuffles sideways as it counts.
     val steady = look.text.copy(fontFeatureSettings = "tnum")
     Box(Modifier.fillMaxWidth()) {
+        Text(
+            text = Strings.score(score),
+            style = MaterialTheme.typography.bodyMedium.merge(steady),
+            modifier = Modifier.align(Alignment.CenterStart).padding(start = BarPadding).testTag(SCORE_TAG),
+        )
         Text(
             text = clockText(elapsedSeconds),
             style = MaterialTheme.typography.titleMedium.merge(steady),
@@ -204,3 +215,4 @@ private const val HINT_MILLIS = 4_000L
 
 const val ELAPSED_TAG = "elapsed"
 const val MOVES_TAG = "moves"
+const val SCORE_TAG = "score"

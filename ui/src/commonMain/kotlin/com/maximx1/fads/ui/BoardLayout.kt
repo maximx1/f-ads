@@ -112,7 +112,7 @@ fun BoardLayout.landing(
 class BoardLayout(
     width: Float,
     height: Float,
-    private val gap: Float,
+    val gap: Float,
     split: Float,
     private val columnSizes: List<Int>,
 ) {
@@ -124,7 +124,10 @@ class BoardLayout(
     val cardHeight: Float = cardWidth * CARD_ASPECT
 
     private val left = (width - cardWidth * SLOTS - gap * (SLOTS - 1)) / 2
-    private val columnsTop = gap + cardHeight + gap * 2
+
+    /** Where the columns start: the top row, with a gap under it twice the usual. */
+    val columnsTop = gap + cardHeight + gap * 2
+
     private val columnRoom = (height - gap - columnsTop - cardHeight).coerceAtLeast(0f)
 
     // How much closer each top-row slot sits to its neighbour in the same group. Kept to what the gap can give,

@@ -21,6 +21,11 @@ class Game private constructor(
      */
     val movesMade: Int get() = record.movesMade
 
+    /** How many moves have been taken back. Each one put a move on [movesMade] and took one off the record. */
+    val undos: Int get() = (movesMade - moveCount) / 2
+
+    val hintsTaken: Int get() = record.hintsTaken
+
     val canUndo: Boolean get() = record.moves.isNotEmpty()
 
     /** Time spent playing so far. The game does not count it: whoever runs the clock sets it with [withElapsed]. */
@@ -43,6 +48,9 @@ class Game private constructor(
     /** A move worth trying next, or `null` if there is none to suggest. It never just undoes the last move. */
     fun hint(): Move? =
         state.hint(before = if (canUndo) record.copy(moves = record.moves.dropLast(1)).replay() else null)
+
+    /** The same game with one more hint counted against it. */
+    fun takeHint(): Game = Game(record.copy(hintsTaken = hintsTaken + 1), state)
 
     /** The same game with [millis] on its clock. */
     fun withElapsed(millis: Long): Game = Game(record.copy(elapsedMillis = millis), state)

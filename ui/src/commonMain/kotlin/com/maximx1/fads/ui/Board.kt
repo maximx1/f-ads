@@ -52,11 +52,15 @@ import kotlinx.coroutines.launch
 
 private typealias CardPosition = Animatable<Offset, AnimationVector2D>
 
-/** How the board is painted: the cards, the outlines of the empty places, and the marks that point out a hint. */
+/**
+ * How the board is painted: the cards, the outlines of the empty places, and the marks that point out a hint.
+ * [pane], if there is one, is painted under all of them, across the whole board.
+ */
 class BoardPaint(
     val cards: CardStyle,
     val slots: Color = SlotColor,
     val hint: Color = HintColor,
+    val pane: (DrawScope.(BoardLayout) -> Unit)? = null,
 )
 
 @Composable
@@ -108,7 +112,7 @@ fun Board(
         val hand = remember(scope) { Hand(scope) }
         SideEffect { hand.table = Table(state, spots, layout, onMove) }
 
-        Canvas(Modifier.fillMaxSize()) { drawSlots(layout, paint.slots) }
+        Canvas(Modifier.fillMaxSize()) { drawBareBoard(layout, paint) }
 
         val cardSize = with(density) { DpSize(layout.cardWidth.toDp(), layout.cardHeight.toDp()) }
         spots.forEach { (card, spot) ->
@@ -284,6 +288,15 @@ private val Spot.height: Float
             is Spot.InFreeCell -> 0f
             is Spot.OnFoundation -> height.toFloat()
         }
+
+/** Everything under the cards: the pane, if there is one, and the outlines of the places they can go. */
+private fun DrawScope.drawBareBoard(
+    layout: BoardLayout,
+    paint: BoardPaint,
+) {
+    paint.pane?.invoke(this, layout)
+    drawSlots(layout, paint.slots)
+}
 
 private fun DrawScope.drawSlots(
     layout: BoardLayout,

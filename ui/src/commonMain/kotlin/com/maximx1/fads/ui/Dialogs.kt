@@ -29,21 +29,22 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.maximx1.fads.core.engine.BestTimes
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
+import com.maximx1.fads.core.engine.score
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.ui.theme.TableTheme
 
 /**
- * Up while the player has stopped the clock. It names the deal on the table, shows the best times, and is where
+ * Up while the player has stopped the clock. It names the deal on the table, shows the records, and is where
  * the theme and the other settings are changed.
  */
 @Composable
 internal fun PauseDialog(
     game: Game,
     elapsedSeconds: Long,
-    bestTimes: BestTimes,
+    records: Records,
     settings: Settings,
     onResume: () -> Unit,
 ) {
@@ -54,8 +55,11 @@ internal fun PauseDialog(
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(Strings.gameNumber(game.dealNumber), style = MaterialTheme.typography.titleMedium)
                 Text(Strings.time(clockText(elapsedSeconds)))
-                bestTimes.fastest?.let { Text(Strings.bestTime(clockTextOfMillis(it.millis))) }
-                bestTimes.bestOn(game.dealNumber)?.let { Text(Strings.bestOnDeal(clockTextOfMillis(it))) }
+                Text(Strings.score(game.score))
+                records.fastest?.let { Text(Strings.bestTime(clockTextOfMillis(it.millis))) }
+                records.bestOn(game.dealNumber)?.let { Text(Strings.bestOnDeal(clockTextOfMillis(it))) }
+                records.highest?.let { Text(Strings.highScore(it.score)) }
+                records.highestOn(game.dealNumber)?.let { Text(Strings.highestOnDeal(it)) }
                 Text(
                     text = Strings.THEME,
                     style = MaterialTheme.typography.labelLarge,
@@ -159,7 +163,7 @@ internal fun RestartDialog(
 @Composable
 internal fun WinDialog(
     game: Game,
-    bestTimes: BestTimes,
+    records: Records,
     onNewGame: () -> Unit,
 ) {
     var closed by rememberSaveable(game.dealNumber, game.moveCount) { mutableStateOf(false) }
@@ -170,11 +174,19 @@ internal fun WinDialog(
         text = {
             Column {
                 Text(Strings.winText(game.dealNumber, game.movesMade, clockTextOfMillis(game.elapsedMillis)))
-                val fastest = bestTimes.fastest
+                Text(Strings.score(game.score))
+                val win = Win(game.dealNumber, game.elapsedMillis, game.movesMade, game.score)
+                val fastest = records.fastest
                 when {
                     fastest == null -> Unit
-                    fastest == Win(game.dealNumber, game.elapsedMillis, game.movesMade) -> Text(Strings.NEW_BEST_TIME)
+                    fastest == win -> Text(Strings.NEW_BEST_TIME)
                     else -> Text(Strings.bestTime(clockTextOfMillis(fastest.millis)))
+                }
+                val highest = records.highest
+                when {
+                    highest == null -> Unit
+                    highest == win -> Text(Strings.NEW_HIGH_SCORE)
+                    else -> Text(Strings.highScore(highest.score))
                 }
             }
         },

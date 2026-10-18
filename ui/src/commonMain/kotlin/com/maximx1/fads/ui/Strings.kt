@@ -13,6 +13,7 @@ internal object Strings {
     const val THEME = "Theme"
     const val DIM_STUCK_CARDS = "Dim cards that can't move"
     const val NEW_BEST_TIME = "A new best time!"
+    const val NEW_HIGH_SCORE = "A new high score!"
 
     const val NEW_GAME_TITLE = "New game"
     const val DEAL_NUMBER = "Deal number"
@@ -29,6 +30,12 @@ internal object Strings {
     fun gameNumber(deal: Long) = "Game #$deal"
 
     fun moveCount(moves: Int) = "Moves: $moves"
+
+    fun score(points: Int) = "Score: $points"
+
+    fun highScore(points: Int) = "High score: $points"
+
+    fun highestOnDeal(points: Int) = "High score on this deal: $points"
 
     fun time(clock: String) = "Time: $clock"
 

@@ -1,6 +1,7 @@
 package com.maximx1.fads.ui.theme
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -11,6 +12,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
+import com.maximx1.fads.ui.BoardLayout
 import com.maximx1.fads.ui.CardStyle
 
 /** Everything about the screen that changes with the [TableTheme]. */
@@ -27,6 +29,12 @@ internal interface Look {
 
     /** True if the table is pale, so the status bar needs dark icons to show against it. */
     val paleTable: Boolean get() = false
+
+    /** Room left between the board and the table around it, for a [pane] to have a frame of table. */
+    val boardPadding: PaddingValues get() = PaddingValues()
+
+    /** Painted across the board, under the cards and the outlines of the empty places. */
+    val pane: (DrawScope.(BoardLayout) -> Unit)? get() = null
 
     /** Paints the table. It fills the whole screen, under the system bars too. */
     fun DrawScope.drawTable()
