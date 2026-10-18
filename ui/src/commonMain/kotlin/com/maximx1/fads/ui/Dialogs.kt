@@ -48,10 +48,10 @@ import com.maximx1.fads.ui.theme.TableTheme
 @Composable
 internal fun PauseDialog(
     game: Game<*, *>,
-    elapsedSeconds: Long,
     records: Records,
     settings: Settings,
     onResume: () -> Unit,
+    onHistory: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onResume,
@@ -61,7 +61,8 @@ internal fun PauseDialog(
                 Heading(Strings.THIS_GAME, first = true)
                 Text(fullName(game.type), style = MaterialTheme.typography.titleMedium)
                 Text(Strings.gameNumber(game.dealNumber))
-                Text(Strings.time(clockText(elapsedSeconds)))
+                // The clock has stopped, so the game holds all the time spent on it.
+                Text(Strings.time(clockTextOfMillis(game.elapsedMillis)))
                 Text(Strings.moveCount(game.movesMade))
                 Text(Strings.score(game.score))
 
@@ -83,6 +84,7 @@ internal fun PauseDialog(
             }
         },
         confirmButton = { TextButton(onClick = onResume) { Text(Strings.RESUME) } },
+        dismissButton = { TextButton(onClick = onHistory) { Text(Strings.HISTORY) } },
     )
 }
 

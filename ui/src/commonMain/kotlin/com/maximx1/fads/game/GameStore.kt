@@ -2,6 +2,7 @@ package com.maximx1.fads.game
 
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.GameType
+import com.maximx1.fads.core.engine.History
 import com.maximx1.fads.core.engine.Records
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -30,8 +31,15 @@ class GameStore(
         type: GameType = GameType.FreeCell,
     ) = withContext(Dispatchers.IO) { storage.write(recordsFile(type), records.toJson()) }
 
+    /** Every game played, newest first. None at all if nothing was saved or it cannot be read. */
+    suspend fun loadHistory(): History =
+        withContext(Dispatchers.IO) { storage.read(HISTORY)?.let(History::fromJson) ?: History() }
+
+    suspend fun save(history: History) = withContext(Dispatchers.IO) { storage.write(HISTORY, history.toJson()) }
+
     companion object {
         const val GAME = "game.json"
+        const val HISTORY = "history.json"
 
         // Named from when it held only FreeCell's best times, and kept so that those still load.
         const val RECORDS = "best-times.json"

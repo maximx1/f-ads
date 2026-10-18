@@ -16,6 +16,7 @@ import androidx.test.core.app.ActivityScenario
 import com.maximx1.fads.MainActivity
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.GameType
+import com.maximx1.fads.core.engine.History
 import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.state.GameState
 import com.maximx1.fads.game.FileStorage
@@ -123,6 +124,17 @@ class NewGameDialogTest {
         compose.onNodeWithContentDescription("New").performClick()
         inDialog("Solitaire").assertIsSelected()
         inDialog("Draw 3").assertIsSelected()
+    }
+
+    @Test
+    fun dealingAgainPutsTheGameLeftUnfinishedInTheHistory() {
+        inDialog("Random deal").performClick()
+        val saved = File(RuntimeEnvironment.getApplication().filesDir, GameStore.HISTORY)
+        compose.waitUntil(TIMEOUT) { saved.exists() }
+        val played = History.fromJson(saved.readText())!!.games.single()
+        assertEquals(1L, played.dealNumber)
+        assertEquals(1, played.moves)
+        assertEquals(false, played.won)
     }
 
     private companion object {

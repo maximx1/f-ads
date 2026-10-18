@@ -39,6 +39,24 @@ internal object Strings {
     const val WIN_NEW_GAME = "New game"
     const val CLOSE = "Close"
 
+    const val HISTORY = "History"
+    const val BACK = "Back"
+    const val SEARCH_DEALS = "Search deal numbers"
+    const val ALL_GAMES = "All"
+    const val WON_ONLY = "Won only"
+    const val NO_GAMES_YET = "No games finished yet."
+    const val NOTHING_FOUND = "No games match."
+    const val WON = "Won"
+    const val NOT_WON = "Not won"
+    const val PLAY_AGAIN = "Play again"
+    const val WATCH = "Watch"
+    const val JUST_NOW = "Just now"
+    const val CANNOT_WATCH = "This game can't be played back."
+    const val TO_START = "Back to the start"
+    const val STEP_BACK = "Step back"
+    const val STEP_FORWARD = "Step forward"
+    const val SPEED = "Speed"
+
     fun draw(cards: Int) = "Draw $cards"
 
     fun suits(count: Int) = if (count == 1) "1 suit" else "$count suits"
@@ -58,6 +76,31 @@ internal object Strings {
     fun bestTime(clock: String) = "Best time: $clock"
 
     fun bestOnDeal(clock: String) = "Best on this deal: $clock"
+
+    fun dealOf(
+        game: String,
+        deal: Long,
+    ) = "$game #$deal"
+
+    fun playedLine(
+        ended: String,
+        clock: String,
+        moves: Int,
+        score: Int,
+    ) = "$ended · $clock · $moves moves · $score points"
+
+    fun minutesAgo(minutes: Long) = "$minutes min ago"
+
+    fun hoursAgo(hours: Long) = "$hours h ago"
+
+    fun daysAgo(days: Long) = if (days == 1L) "Yesterday" else "$days days ago"
+
+    fun moveOf(
+        step: Int,
+        last: Int,
+    ) = "Move $step of $last"
+
+    fun speed(times: Int) = "$times×"
 
     fun restartText(deal: Long) = "Your moves on deal #$deal will be cleared."
 

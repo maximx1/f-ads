@@ -30,14 +30,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.Played
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.ui.theme.ClockLook
 import com.maximx1.fads.ui.theme.look
 import kotlinx.coroutines.delay
+import kotlin.time.Clock
 
 private enum class Prompt { NONE, PAUSED, NEW_GAME, RESTART }
 
-/** The whole game: the table, and whichever dialog is up over it. */
+/** What fills the screen: the table, the history of games played, or one of them played back. */
+private enum class Screen { TABLE, HISTORY, WATCH }
+
+/**
+ * The whole game: the choice of game on a first open, then the table with whichever dialog is up over it, or the
+ * history of games played, or one of them being watched.
+ */
 @Composable
 fun GameScreen(
     viewModel: GameViewModel,
@@ -45,11 +53,13 @@ fun GameScreen(
 ) {
     val game by viewModel.game.collectAsStateWithLifecycle()
     val elapsedSeconds by viewModel.elapsedSeconds.collectAsStateWithLifecycle()
-    val records by viewModel.records.collectAsStateWithLifecycle()
     var prompt by rememberSaveable { mutableStateOf(Prompt.NONE) }
+    var screen by rememberSaveable { mutableStateOf(Screen.TABLE) }
+    var watching by remember { mutableStateOf<Played?>(null) }
 
-    // The clock stops behind the pause dialog just as it does when the app goes out of sight.
-    val paused = prompt == Prompt.PAUSED
+    // The clock stops behind the pause dialog, and while the history is up, just as it does when the app goes
+    // out of sight.
+    val paused = prompt == Prompt.PAUSED || screen != Screen.TABLE
     LifecycleStartEffect(viewModel, paused) {
         viewModel.onScreen(!paused)
         onStopOrDispose { viewModel.onScreen(false) }
@@ -67,14 +77,73 @@ fun GameScreen(
         return
     }
     LaunchedEffect(viewModel, type) { viewModel.open(type) }
-    Table(game, elapsedSeconds, settings, viewModel, onPrompt = { prompt = it })
 
+    val shown = watching
+    when {
+        screen == Screen.HISTORY -> {
+            PastGames(
+                viewModel,
+                onPlayAgain = {
+                    settings.gameType = it.type
+                    viewModel.newGame(it.type, it.dealNumber)
+                    prompt = Prompt.NONE
+                    screen = Screen.TABLE
+                },
+                onWatch = {
+                    watching = it
+                    screen = Screen.WATCH
+                },
+                onClose = { screen = Screen.TABLE },
+            )
+        }
+
+        screen == Screen.WATCH && shown != null -> {
+            WatchScreen(shown, settings.theme.look, onClose = { screen = Screen.HISTORY })
+        }
+
+        else -> {
+            // What was being watched does not survive the app being rebuilt, so that falls back to the table.
+            Table(game, elapsedSeconds, settings, viewModel, onPrompt = { prompt = it })
+            Prompts(prompt, viewModel, settings, onPrompt = { prompt = it }, onHistory = { screen = Screen.HISTORY })
+        }
+    }
+}
+
+/** The history of games played, as it stands now. */
+@Composable
+private fun PastGames(
+    viewModel: GameViewModel,
+    onPlayAgain: (Played) -> Unit,
+    onWatch: (Played) -> Unit,
+    onClose: () -> Unit,
+) {
+    val history by viewModel.history.collectAsStateWithLifecycle()
+    HistoryScreen(
+        history = history,
+        now = remember(history) { Clock.System.now().toEpochMilliseconds() },
+        onPlayAgain = onPlayAgain,
+        onWatch = onWatch,
+        onClose = onClose,
+    )
+}
+
+/** Whichever dialog [prompt] calls for over the table, or the win when the game has just been won. */
+@Composable
+private fun Prompts(
+    prompt: Prompt,
+    viewModel: GameViewModel,
+    settings: Settings,
+    onPrompt: (Prompt) -> Unit,
+    onHistory: () -> Unit,
+) {
+    val game by viewModel.game.collectAsStateWithLifecycle()
+    val records by viewModel.records.collectAsStateWithLifecycle()
     val current = game ?: return
     // The dialogs keep their dark panels in every theme and take only the colour of their buttons from it.
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = settings.theme.look.accent)) {
         when (prompt) {
             Prompt.PAUSED -> {
-                PauseDialog(current, elapsedSeconds, records, settings, onResume = { prompt = Prompt.NONE })
+                PauseDialog(current, records, settings, onResume = { onPrompt(Prompt.NONE) }, onHistory = onHistory)
             }
 
             Prompt.NEW_GAME -> {
@@ -83,9 +152,9 @@ fun GameScreen(
                     onDeal = { chosen, number ->
                         settings.gameType = chosen
                         viewModel.newGame(chosen, number)
-                        prompt = Prompt.NONE
+                        onPrompt(Prompt.NONE)
                     },
-                    onDismiss = { prompt = Prompt.NONE },
+                    onDismiss = { onPrompt(Prompt.NONE) },
                 )
             }
 
@@ -94,9 +163,9 @@ fun GameScreen(
                     dealNumber = current.dealNumber,
                     onRestart = {
                         viewModel.restart()
-                        prompt = Prompt.NONE
+                        onPrompt(Prompt.NONE)
                     },
-                    onDismiss = { prompt = Prompt.NONE },
+                    onDismiss = { onPrompt(Prompt.NONE) },
                 )
             }
 

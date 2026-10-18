@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
     private val gameFactory
         get() =
             viewModelFactory {
-                initializer { GameViewModel(GameStore(FileStorage(filesDir)), SystemClock::elapsedRealtime) }
+                initializer { GameViewModel(GameStore(FileStorage(filesDir)), now = SystemClock::elapsedRealtime) }
             }
 
     private fun systemBarIcons(dark: Boolean) {

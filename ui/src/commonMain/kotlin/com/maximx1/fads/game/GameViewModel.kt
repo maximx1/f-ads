@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.GameType
+import com.maximx1.fads.core.engine.History
+import com.maximx1.fads.core.engine.Played
 import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
 import kotlinx.coroutines.Job
@@ -14,16 +16,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import kotlin.time.Clock
 
 /**
  * Holds the game on the table, runs its clock and keeps it saved.
  *
+ * @param wallClock the time of day, in milliseconds since 1970 began, to say when each finished game ended.
  * @param now a clock in milliseconds that only ever goes forward. Only the difference between two readings is
  * used.
  */
 @Suppress("TooManyFunctions") // One for each thing the player can do to the game, and a few to run the clock.
 class GameViewModel(
     private val store: GameStore,
+    private val wallClock: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     private val now: () -> Long,
 ) : ViewModel() {
     private val current = MutableStateFlow<Game<*, *>?>(null)
@@ -60,8 +65,18 @@ class GameViewModel(
     // The type of game being fetched from the store, until it is on the table.
     private var opening: GameType? = null
 
+    private val past = MutableStateFlow(History())
+
+    /** Every game finished or given up on, newest first. Empty for the moment it takes to read at start-up. */
+    val history: StateFlow<History> = past.asStateFlow()
+
     init {
-        viewModelScope.launch { for (game in saves) store.save(game) }
+        viewModelScope.launch {
+            val saved = store.loadHistory()
+            // Anything that ended while it was read is newer.
+            past.value = History(past.value.games + saved.games)
+            for (game in saves) store.save(game)
+        }
     }
 
     /**
@@ -127,7 +142,10 @@ class GameViewModel(
 
     fun restart() {
         finisher?.cancel()
-        change { it.restart() }
+        change {
+            giveUp(it)
+            it.restart()
+        }
     }
 
     /** Deals [dealNumber] of the game on the table. */
@@ -143,7 +161,10 @@ class GameViewModel(
     ) {
         finisher?.cancel()
         if (current.value?.type == type) {
-            change { type.start(dealNumber) }
+            change {
+                giveUp(it)
+                type.start(dealNumber)
+            }
         } else {
             switchTo(type.start(dealNumber))
         }
@@ -187,11 +208,24 @@ class GameViewModel(
      * game saved before there was a clock, and no real game could ever beat it.
      */
     private fun record(won: Game<*, *>) {
+        addToHistory(won)
         if (won.elapsedMillis <= 0) return
         val records = best.value.with(Win(won.dealNumber, won.elapsedMillis, won.movesMade, won.score))
         if (records === best.value) return
         best.value = records
         viewModelScope.launch { store.save(records, won.type) }
+    }
+
+    /** Puts [game], which is being left unfinished, in the history, if anything was played. */
+    private fun giveUp(game: Game<*, *>) {
+        if (!game.isWon && game.movesMade > 0) addToHistory(game)
+    }
+
+    /** Puts [game], which has ended, in the history. */
+    private fun addToHistory(game: Game<*, *>) {
+        val history = past.value.with(Played.of(game, wallClock()))
+        past.value = history
+        viewModelScope.launch { store.save(history) }
     }
 
     /** Stops the clock and returns [game] with the time it counted added on. */
