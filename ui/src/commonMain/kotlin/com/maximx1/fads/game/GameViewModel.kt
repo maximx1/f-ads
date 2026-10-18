@@ -3,6 +3,7 @@ package com.maximx1.fads.game
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
 import kotlinx.coroutines.Job
@@ -56,11 +57,25 @@ class GameViewModel(
     private var finisher: Job? = null
     private var finishing = false
 
+    // The type of game being fetched from the store, until it is on the table.
+    private var opening: GameType? = null
+
     init {
+        viewModelScope.launch { for (game in saves) store.save(game) }
+    }
+
+    /**
+     * Puts [type]'s saved game on the table, or a fresh random deal of it if none was saved. Does nothing if a
+     * game of that type is already there.
+     */
+    fun open(type: GameType) {
+        if (current.value?.type == type || opening == type) return
+        opening = type
         viewModelScope.launch {
-            best.value = store.loadRecords()
-            show(store.load() ?: Game.start(randomDealNumber()).also { saves.send(it) })
-            for (game in saves) store.save(game)
+            val saved = store.load(type)
+            // Dealing a new game while this one was read wins.
+            if (opening != type) return@launch
+            switchTo(saved ?: type.start(randomDealNumber()))
         }
     }
 
@@ -115,9 +130,23 @@ class GameViewModel(
         change { it.restart() }
     }
 
+    /** Deals [dealNumber] of the game on the table. */
     fun newGame(dealNumber: Long) {
+        val type = current.value?.type ?: return
+        newGame(type, dealNumber)
+    }
+
+    /** Deals [dealNumber] of [type], which becomes the game on the table whatever was there before. */
+    fun newGame(
+        type: GameType,
+        dealNumber: Long,
+    ) {
         finisher?.cancel()
-        change { Game.start(dealNumber) }
+        if (current.value?.type == type) {
+            change { type.start(dealNumber) }
+        } else {
+            switchTo(type.start(dealNumber))
+        }
     }
 
     /**
@@ -127,6 +156,22 @@ class GameViewModel(
     suspend fun close() {
         onScreen(false)
         current.value?.let { store.save(it) }
+    }
+
+    /** Puts [game], of another type than the one on the table, there in its place, which is saved as it stood. */
+    private fun switchTo(game: Game<*, *>) {
+        opening = null
+        current.value?.let { left ->
+            val stopped = stopClock(left)
+            viewModelScope.launch { store.save(stopped) }
+        }
+        best.value = Records()
+        show(game)
+        saves.trySend(game)
+        viewModelScope.launch {
+            val records = store.loadRecords(game.type)
+            if (current.value?.type == game.type) best.value = records
+        }
     }
 
     private fun change(transform: (Game<*, *>) -> Game<*, *>) {

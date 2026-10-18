@@ -1,5 +1,6 @@
 package com.maximx1.fads.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,7 +13,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -21,6 +25,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -30,14 +35,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.ui.theme.TableTheme
 
 /**
- * Up while the player has stopped the clock. It names the deal on the table, shows the records, and is where
- * the theme and the other settings are changed.
+ * Up while the player has stopped the clock. It shows the game on the table and the records for it, and is
+ * where the theme and the other settings are changed.
  */
 @Composable
 internal fun PauseDialog(
@@ -52,18 +58,26 @@ internal fun PauseDialog(
         title = { Text(Strings.PAUSED) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(Strings.gameNumber(game.dealNumber), style = MaterialTheme.typography.titleMedium)
+                Heading(Strings.THIS_GAME, first = true)
+                Text(fullName(game.type), style = MaterialTheme.typography.titleMedium)
+                Text(Strings.gameNumber(game.dealNumber))
                 Text(Strings.time(clockText(elapsedSeconds)))
+                Text(Strings.moveCount(game.movesMade))
                 Text(Strings.score(game.score))
-                records.fastest?.let { Text(Strings.bestTime(clockTextOfMillis(it.millis))) }
-                records.bestOn(game.dealNumber)?.let { Text(Strings.bestOnDeal(clockTextOfMillis(it))) }
-                records.highest?.let { Text(Strings.highScore(it.score)) }
-                records.highestOn(game.dealNumber)?.let { Text(Strings.highestOnDeal(it)) }
-                Text(
-                    text = Strings.THEME,
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(top = SectionGap),
-                )
+
+                val bests =
+                    listOfNotNull(
+                        records.fastest?.let { Strings.bestTime(clockTextOfMillis(it.millis)) },
+                        records.bestOn(game.dealNumber)?.let { Strings.bestOnDeal(clockTextOfMillis(it)) },
+                        records.highest?.let { Strings.highScore(it.score) },
+                        records.highestOn(game.dealNumber)?.let { Strings.highestOnDeal(it) },
+                    )
+                if (bests.isNotEmpty()) {
+                    Heading(Strings.RECORDS)
+                    for (line in bests) Text(line)
+                }
+
+                Heading(Strings.SETTINGS)
                 ThemeChoice(settings.theme, onChoose = { settings.theme = it })
                 DimChoice(settings.dimsStuckCards, onChoose = { settings.dimsStuckCards = it })
             }
@@ -72,23 +86,46 @@ internal fun PauseDialog(
     )
 }
 
-/** One radio button for each theme. Picking one puts it on the table straight away, behind the dialog. */
+/** The name of a section of a dialog, with room above it unless it is the [first]. */
+@Composable
+private fun Heading(
+    text: String,
+    first: Boolean = false,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = if (first) 0.dp else SectionGap, bottom = HeadingGap),
+    )
+}
+
+/**
+ * A dropdown of the themes: a button showing the one on the table, which opens a menu of all of them. Picking one
+ * puts it on the table straight away, behind the dialog. (Material's own exposed dropdown never settles inside a
+ * scrolling dialog, so this is a plain menu.)
+ */
 @Composable
 private fun ThemeChoice(
     chosen: TableTheme,
     onChoose: (TableTheme) -> Unit,
 ) {
-    Column(Modifier.selectableGroup()) {
-        for (theme in TableTheme.entries) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .selectable(selected = theme == chosen, role = Role.RadioButton, onClick = { onChoose(theme) })
-                    .padding(vertical = ChoicePadding),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RadioButton(selected = theme == chosen, onClick = null)
-                Text(theme.label, Modifier.padding(start = ChoicePadding))
+    var open by remember { mutableStateOf(false) }
+    Text(Strings.THEME, style = MaterialTheme.typography.labelMedium)
+    Box {
+        OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(chosen.label, Modifier.weight(1f))
+            Text(DROPDOWN_ARROW)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            for (theme in TableTheme.entries) {
+                DropdownMenuItem(
+                    text = { Text(theme.label) },
+                    onClick = {
+                        onChoose(theme)
+                        open = false
+                    },
+                )
             }
         }
     }
@@ -112,33 +149,45 @@ private fun DimChoice(
     }
 }
 
-/** Deals a random game, or the one whose number the player types. */
+/**
+ * Deals a random game, or the one whose number the player types, of whichever game the player picks. It starts on
+ * the game being [playing].
+ */
 @Composable
 internal fun NewGameDialog(
-    onDeal: (Long) -> Unit,
+    playing: GameType,
+    onDeal: (GameType, Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var text by rememberSaveable { mutableStateOf("") }
+    var chosen by rememberSaveable(stateSaver = GameTypeSaver) { mutableStateOf(playing) }
     val number = text.toLongOrNull()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(Strings.NEW_GAME_TITLE) },
         text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { typed -> text = typed.filter { it.isDigit() }.take(MAX_DEAL_DIGITS) },
-                label = { Text(Strings.DEAL_NUMBER) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { number?.let(onDeal) }),
-            )
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                GameChoice(chosen, onChoose = { chosen = it })
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { typed -> text = typed.filter { it.isDigit() }.take(MAX_DEAL_DIGITS) },
+                    label = { Text(Strings.DEAL_NUMBER) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { number?.let { onDeal(chosen, it) } }),
+                    modifier = Modifier.padding(top = SectionGap),
+                )
+            }
         },
         confirmButton = {
-            TextButton(onClick = { number?.let(onDeal) }, enabled = number != null) { Text(Strings.DEAL) }
+            TextButton(
+                onClick = { number?.let { onDeal(chosen, it) } },
+                enabled = number != null,
+            ) { Text(Strings.DEAL) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(Strings.CANCEL) }
-            TextButton(onClick = { onDeal(GameViewModel.randomDealNumber()) }) { Text(Strings.RANDOM_DEAL) }
+            TextButton(onClick = { onDeal(chosen, GameViewModel.randomDealNumber()) }) { Text(Strings.RANDOM_DEAL) }
         },
     )
 }
@@ -197,4 +246,5 @@ internal fun WinDialog(
 // 18 digits always fits in a Long.
 private const val MAX_DEAL_DIGITS = 18
 private val SectionGap = 16.dp
-private val ChoicePadding = 10.dp
+private val HeadingGap = 4.dp
+private const val DROPDOWN_ARROW = "▾"

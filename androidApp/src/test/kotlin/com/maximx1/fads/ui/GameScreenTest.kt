@@ -24,6 +24,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximx1.fads.MainActivity
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.state.GameState
@@ -68,7 +69,10 @@ class GameScreenTest {
     private fun launch(saved: String? = null) {
         saved?.let { saveFile.writeText(it) }
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasTestTag(ELAPSED_TAG)).fetchSemanticsNodes().isNotEmpty() }
+        // The table, or on a first open the choice of game.
+        compose.waitUntil(TIMEOUT) {
+            compose.onAllNodes(hasTestTag(ELAPSED_TAG) or hasText("Play")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun savedGame(): Game<GameState, Move>? =
@@ -108,8 +112,13 @@ class GameScreenTest {
     }
 
     @Test
-    fun aFirstStartDealsARandomGameAndSavesIt() {
+    fun aFirstOpenAsksWhichGameOnceAndThenDealsARandomOneAndSavesIt() {
         launch()
+        compose.onNodeWithText("Pick a game").assertExists()
+        compose.onNodeWithText("FreeCell").assertIsSelected()
+        compose.onNodeWithText("Play").performClick()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasTestTag(ELAPSED_TAG)).fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(GameType.FreeCell, settings().gameType)
         waitForSave { it.moveCount == 0 }
         val number = savedGame()!!.dealNumber
         assertTrue(number in 1..GameViewModel.MAX_RANDOM_DEAL)
@@ -287,16 +296,17 @@ class GameScreenTest {
     fun aThemePickedInThePauseDialogGoesOnTheTableAndIsKept() {
         launch("""{"dealNumber":1}""")
         compose.onNodeWithContentDescription("Pause").performClick()
-        inDialog("Flat").assertIsSelected()
-        inDialog("Cyberpunk").performClick()
-        inDialog("Cyberpunk").assertIsSelected()
+        // The dropdown shows the theme on the table, and opens to list the rest.
+        inDialog("Flat").performClick()
+        compose.onNodeWithText("Cyberpunk").performClick()
+        inDialog("Cyberpunk").assertExists()
         inDialog("Resume").performClick()
         assertEquals(TableTheme.CYBERPUNK, settings().theme)
 
         scenario!!.close()
         launch()
         compose.onNodeWithContentDescription("Pause").performClick()
-        inDialog("Cyberpunk").assertIsSelected()
+        inDialog("Cyberpunk").assertExists()
     }
 
     @Test

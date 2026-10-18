@@ -30,9 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maximx1.fads.core.engine.Game
-import com.maximx1.fads.core.rules.Move
-import com.maximx1.fads.core.rules.stuckCards
-import com.maximx1.fads.core.state.GameState
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.ui.theme.ClockLook
 import com.maximx1.fads.ui.theme.look
@@ -58,6 +55,18 @@ fun GameScreen(
         onStopOrDispose { viewModel.onScreen(false) }
     }
 
+    val type = settings.gameType
+    if (type == null) {
+        Table(null, elapsedSeconds, settings, viewModel, onPrompt = {})
+        Landing(
+            onPlay = {
+                settings.gameType = it
+                viewModel.newGame(it, GameViewModel.randomDealNumber())
+            },
+        )
+        return
+    }
+    LaunchedEffect(viewModel, type) { viewModel.open(type) }
     Table(game, elapsedSeconds, settings, viewModel, onPrompt = { prompt = it })
 
     val current = game ?: return
@@ -70,8 +79,10 @@ fun GameScreen(
 
             Prompt.NEW_GAME -> {
                 NewGameDialog(
-                    onDeal = {
-                        viewModel.newGame(it)
+                    playing = current.type,
+                    onDeal = { chosen, number ->
+                        settings.gameType = chosen
+                        viewModel.newGame(chosen, number)
                         prompt = Prompt.NONE
                     },
                     onDismiss = { prompt = Prompt.NONE },
@@ -116,20 +127,20 @@ private fun Table(
 
 /** The clock and move count at the top, the board, and the split button at the bottom. */
 @Composable
-private fun PlayArea(
-    game: Game<*, *>,
+private fun <S : Any, M : Any> PlayArea(
+    game: Game<S, M>,
     elapsedSeconds: Long,
     settings: Settings,
     viewModel: GameViewModel,
     onPrompt: (Prompt) -> Unit,
 ) {
     val look = settings.theme.look
-    // Only FreeCell has a board for now.
-    val state = game.state as? GameState ?: return
-    val suggestion = remember(state, game.moveCount) { game.hint() as? Move }
+    val state = game.state
+    val layout = remember(game.rules) { tableLayoutFor(game.rules) }
+    val suggestion = remember(state, game.moveCount) { game.hint() }
     val finishable = remember(state) { game.canAutoComplete }
     // The position a hint was asked for. The hint shows only while that is still the position on the table.
-    var hintFor by remember { mutableStateOf<GameState?>(null) }
+    var hintFor by remember { mutableStateOf<Any?>(null) }
     LaunchedEffect(hintFor) {
         if (hintFor != null) {
             delay(HINT_MILLIS)
@@ -137,7 +148,7 @@ private fun PlayArea(
         }
     }
     val dim = settings.dimsStuckCards
-    val stuck = remember(state, dim) { if (dim) state.stuckCards() else emptySet() }
+    val stuck = remember(state, dim) { if (dim) layout.stuck(state) else emptySet() }
     val hint = suggestion.takeIf { hintFor === state }
     val cards = rememberCardStyle(look::cards)
 
@@ -148,12 +159,13 @@ private fun PlayArea(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TopRow(elapsedSeconds, game.score, game.movesMade, look.clock)
-        Board(
+        CardTable(
             state = state,
+            layout = layout,
             onMove = viewModel::play,
             modifier = Modifier.weight(1f).fillMaxWidth().padding(look.boardPadding),
             paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent, look.pane) },
-            marks = remember(stuck, hint) { BoardMarks(stuck, hint) },
+            marks = remember(stuck, hint) { TableMarks(stuck, hint) },
         )
         SplitButton(
             segments =

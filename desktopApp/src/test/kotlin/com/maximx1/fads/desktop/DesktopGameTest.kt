@@ -56,6 +56,7 @@ class DesktopGameTest {
 
         compose.onNodeWithContentDescription("Pause").performClick()
         compose.onNodeWithText("Game #1").assertExists()
+        compose.onNodeWithText("Flat").performClick()
         compose.onNodeWithText("Backroom").performClick()
         compose.onNodeWithText("Resume").performClick()
         assertEquals(TableTheme.BACKROOM, Settings(storage).theme)
