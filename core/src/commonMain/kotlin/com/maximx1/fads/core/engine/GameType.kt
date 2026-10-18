@@ -3,6 +3,8 @@ package com.maximx1.fads.core.engine
 import com.maximx1.fads.core.klondike.KlondikeRules
 import com.maximx1.fads.core.klondike.KlondikeState
 import com.maximx1.fads.core.rules.FreeCellRules
+import com.maximx1.fads.core.spider.SpiderRules
+import com.maximx1.fads.core.spider.SpiderState
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -49,8 +51,29 @@ sealed interface GameType {
         override fun load(text: String) = Game.fromJson(rules, text)
     }
 
+    /** Spider, played with [suits] suits: 1 (all spades), 2 (spades and hearts) or 4. */
+    @Serializable
+    @SerialName("spider")
+    data class Spider(
+        val suits: Int,
+    ) : GameType {
+        init {
+            require(suits in SpiderState.SUIT_CHOICES) { "Spider is played with 1, 2 or 4 suits, not $suits" }
+        }
+
+        override val key get() = "spider-$suits"
+        override val rules get() = SpiderRules.forSuits(suits)
+
+        override fun start(dealNumber: Long) = Game.start(rules, dealNumber)
+
+        override fun load(text: String) = Game.fromJson(rules, text)
+    }
+
     companion object {
-        val all: List<GameType> get() = listOf(FreeCell, Klondike(1), Klondike(KlondikeState.DRAW_THREE))
+        val all: List<GameType>
+            get() =
+                listOf(FreeCell, Klondike(1), Klondike(KlondikeState.DRAW_THREE)) +
+                    SpiderState.SUIT_CHOICES.map(::Spider)
 
         fun fromKey(key: String): GameType? = all.find { it.key == key }
     }

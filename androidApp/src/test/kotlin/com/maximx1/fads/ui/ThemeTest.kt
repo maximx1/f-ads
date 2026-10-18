@@ -94,7 +94,7 @@ class ThemeTest(
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0} {1}")
         fun themesAndGames(): List<Array<Any>> =
             TableTheme.entries.flatMap { theme ->
-                listOf(GameType.FreeCell, GameType.Klondike(3)).map { arrayOf(theme, it) }
+                listOf(GameType.FreeCell, GameType.Klondike(3), GameType.Spider(2)).map { arrayOf(theme, it) }
             }
 
         private const val TIMEOUT = 10_000L

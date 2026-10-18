@@ -1,5 +1,6 @@
 package com.maximx1.fads.ui
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -16,6 +17,10 @@ import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.core.klondike.KlondikeMove
 import com.maximx1.fads.core.klondike.KlondikeState
+import com.maximx1.fads.core.spider.SpiderMove
+import com.maximx1.fads.core.spider.SpiderState
+import com.maximx1.fads.core.spider.legalMoves
+import com.maximx1.fads.core.spider.play
 import com.maximx1.fads.game.FileStorage
 import com.maximx1.fads.game.GameStore
 import org.junit.After
@@ -101,7 +106,44 @@ class OtherGamesTest {
         assertEquals(GameType.Klondike(1), settings().gameType)
     }
 
+    @Test
+    fun tappingSpidersStockDealsARowAndARunMovesByDraggingItsFirstCard() {
+        val oneSuit = GameType.Spider(1)
+        settings().gameType = oneSuit
+        File(files, GameStore.gameFile(oneSuit)).writeText("""{"dealNumber":1}""")
+        launch()
+
+        val state = oneSuit.start(1).state as SpiderState
+        compose.onNodeWithTag(SpiderLayout.tagOf(state.stock.last())).performClick()
+        waitForSave(oneSuit) { it.record.moves == listOf(SpiderMove.DealRow) }
+
+        // Any legal move between piles, played by dragging its lowest card onto the pile it goes to.
+        val dealt = state.play(SpiderMove.DealRow)
+        val move = dealt.legalMoves().filterIsInstance<SpiderMove.PileToPile>().first()
+        val lead = dealt.piles[move.from][dealt.piles[move.from].size - move.count]
+        val target = dealt.piles[move.to].last()
+        val to =
+            compose
+                .onNodeWithTag(SpiderLayout.tagOf(target))
+                .fetchSemanticsNode()
+                .boundsInRoot.center
+        val from =
+            compose
+                .onNodeWithTag(SpiderLayout.tagOf(lead))
+                .fetchSemanticsNode()
+                .boundsInRoot.topLeft
+        compose.onNodeWithTag(SpiderLayout.tagOf(lead)).performTouchInput {
+            down(grip)
+            val travel = to - (from + grip)
+            repeat(DRAG_STEPS) { moveBy(travel / DRAG_STEPS.toFloat()) }
+            up()
+        }
+        waitForSave(oneSuit) { it.record.moves.lastOrNull() == move }
+    }
+
     private companion object {
+        const val DRAG_STEPS = 10
+        val grip = Offset(20f, 12f)
         const val TIMEOUT = 10_000L
     }
 }

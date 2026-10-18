@@ -8,6 +8,7 @@ internal object Strings {
     const val PLAY = "Play"
     const val FREECELL = "FreeCell"
     const val SOLITAIRE = "Solitaire"
+    const val SPIDER = "Spider"
 
     const val UNDO = "Undo"
     const val AUTO_COMPLETE = "Auto-complete"
@@ -39,6 +40,8 @@ internal object Strings {
     const val CLOSE = "Close"
 
     fun draw(cards: Int) = "Draw $cards"
+
+    fun suits(count: Int) = if (count == 1) "1 suit" else "$count suits"
 
     fun gameNumber(deal: Long) = "Game #$deal"
 
