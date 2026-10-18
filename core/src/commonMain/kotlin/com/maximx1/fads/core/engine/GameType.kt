@@ -1,5 +1,7 @@
 package com.maximx1.fads.core.engine
 
+import com.maximx1.fads.core.klondike.KlondikeRules
+import com.maximx1.fads.core.klondike.KlondikeState
 import com.maximx1.fads.core.rules.FreeCellRules
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -29,8 +31,26 @@ sealed interface GameType {
         override fun load(text: String) = Game.fromJson(FreeCellRules, text)
     }
 
+    /** Klondike, turning [draw] cards from the stock at a time: 1 or 3. */
+    @Serializable
+    @SerialName("klondike")
+    data class Klondike(
+        val draw: Int,
+    ) : GameType {
+        init {
+            require(draw == 1 || draw == KlondikeState.DRAW_THREE) { "Draw 1 or 3, not $draw" }
+        }
+
+        override val key get() = "klondike-$draw"
+        override val rules get() = KlondikeRules.forDraw(draw)
+
+        override fun start(dealNumber: Long) = Game.start(rules, dealNumber)
+
+        override fun load(text: String) = Game.fromJson(rules, text)
+    }
+
     companion object {
-        val all: List<GameType> get() = listOf(FreeCell)
+        val all: List<GameType> get() = listOf(FreeCell, Klondike(1), Klondike(KlondikeState.DRAW_THREE))
 
         fun fromKey(key: String): GameType? = all.find { it.key == key }
     }

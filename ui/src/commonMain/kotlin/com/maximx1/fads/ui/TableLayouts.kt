@@ -8,4 +8,5 @@ import com.maximx1.fads.core.engine.Rules
 internal fun <S : Any, M : Any> tableLayoutFor(rules: Rules<S, M>): TableLayout<S, M> =
     when (rules.type) {
         GameType.FreeCell -> FreeCellLayout
+        is GameType.Klondike -> KlondikeLayout
     } as TableLayout<S, M>

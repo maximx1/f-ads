@@ -1,6 +1,7 @@
 package com.maximx1.fads.ui
 
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -14,8 +15,11 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ActivityScenario
 import com.maximx1.fads.MainActivity
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.state.GameState
+import com.maximx1.fads.game.FileStorage
+import com.maximx1.fads.game.GameStore
 import com.maximx1.fads.game.GameViewModel
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -102,6 +106,23 @@ class NewGameDialogTest {
 
         assertGameNumber(1)
         assertEquals(1, savedGame()?.moveCount)
+    }
+
+    @Test
+    fun anotherGameIsDealtAndKeptWhileFreeCellsGameIsLeftAsItWas() {
+        val drawThree = GameType.Klondike(3)
+        val files = RuntimeEnvironment.getApplication().filesDir
+        inDialog("Solitaire").performClick()
+        inDialog("Draw 1").assertIsSelected()
+        inDialog("Draw 3").performClick()
+        inDialog("Random deal").performClick()
+
+        compose.waitUntil(TIMEOUT) { Settings(FileStorage(files)).gameType == drawThree }
+        compose.waitUntil(TIMEOUT) { File(files, GameStore.gameFile(drawThree)).exists() }
+        assertEquals(1, savedGame()?.moveCount)
+        compose.onNodeWithContentDescription("New").performClick()
+        inDialog("Solitaire").assertIsSelected()
+        inDialog("Draw 3").assertIsSelected()
     }
 
     private companion object {

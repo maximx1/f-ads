@@ -1,11 +1,13 @@
 package com.maximx1.fads.ui
 
 /** Every piece of text the game shows, in one place so that it can be translated one day. */
+@Suppress("TooManyFunctions") // One for each piece of text with a number or a name in it.
 internal object Strings {
     const val APP_NAME = "Fuck Ads"
     const val PICK_A_GAME = "Pick a game"
     const val PLAY = "Play"
     const val FREECELL = "FreeCell"
+    const val SOLITAIRE = "Solitaire"
 
     const val UNDO = "Undo"
     const val AUTO_COMPLETE = "Auto-complete"
@@ -35,6 +37,8 @@ internal object Strings {
     const val WIN_TITLE = "You won!"
     const val WIN_NEW_GAME = "New game"
     const val CLOSE = "Close"
+
+    fun draw(cards: Int) = "Draw $cards"
 
     fun gameNumber(deal: Long) = "Game #$deal"
 

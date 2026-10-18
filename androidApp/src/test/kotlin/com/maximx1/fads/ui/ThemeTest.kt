@@ -12,7 +12,9 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
 import com.maximx1.fads.MainActivity
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.game.FileStorage
+import com.maximx1.fads.game.GameStore
 import com.maximx1.fads.ui.theme.TableTheme
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -27,20 +29,20 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
 /**
- * Starts the whole app in each theme, paints it, and plays a move. The picture of each theme is left in
- * `build/reports/themes`, to be looked at: nothing here can judge whether a theme looks right.
+ * Starts the whole app in each theme and each game, paints it, and in FreeCell plays a move. The picture of each
+ * is left in `build/reports/themes`, to be looked at: nothing here can judge whether a theme looks right.
  */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(qualifiers = "w411dp-h891dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ThemeTest(
     private val theme: TableTheme,
+    private val game: GameType,
 ) {
     @get:Rule
     val compose = createEmptyComposeRule()
 
     private val app = RuntimeEnvironment.getApplication()
-    private val saveFile = File(app.filesDir, "game.json")
     private var scenario: ActivityScenario<MainActivity>? = null
 
     @After
@@ -50,8 +52,16 @@ class ThemeTest(
 
     @Test
     fun itPaintsTheTableAndTheGameStillPlays() {
-        Settings(FileStorage(app.filesDir)).theme = theme
-        saveFile.writeText("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}],"elapsedMillis":83000}""")
+        Settings(FileStorage(app.filesDir)).apply {
+            this.theme = this@ThemeTest.theme
+            gameType = game
+        }
+        val saveFile = File(app.filesDir, GameStore.gameFile(game))
+        if (game == GameType.FreeCell) {
+            saveFile.writeText("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}],"elapsedMillis":83000}""")
+        } else {
+            saveFile.writeText("""{"dealNumber":1,"elapsedMillis":83000}""")
+        }
         scenario = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasTestTag(ELAPSED_TAG)).fetchSemanticsNodes().isNotEmpty() }
         // Long enough for the backroom's first cloud of smoke to be well on its way across.
@@ -61,11 +71,12 @@ class ThemeTest(
         val picture = compose.onRoot().captureToImage().asAndroidBitmap()
         val corner = picture.getPixel(0, picture.height - 1)
         assertNotEquals("Nothing was painted", 0, corner)
-        File("build/reports/themes").apply { mkdirs() }.resolve("${theme.name.lowercase()}.png").outputStream().use {
+        File("build/reports/themes").apply { mkdirs() }.resolve(pictureName()).outputStream().use {
             picture.compress(Bitmap.CompressFormat.PNG, PNG_QUALITY, it)
         }
 
         compose.mainClock.autoAdvance = true
+        if (game != GameType.FreeCell) return
         compose.onNodeWithTag("2C").performTouchInput {
             down(topLeft + grip)
             up()
@@ -74,10 +85,17 @@ class ThemeTest(
         assertEquals(theme, Settings(FileStorage(app.filesDir)).theme)
     }
 
+    // FreeCell's pictures keep the names they had before there were other games.
+    private fun pictureName() =
+        if (game == GameType.FreeCell) "${theme.name.lowercase()}.png" else "${theme.name.lowercase()}-${game.key}.png"
+
     companion object {
         @JvmStatic
-        @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun themes(): List<TableTheme> = TableTheme.entries
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{0} {1}")
+        fun themesAndGames(): List<Array<Any>> =
+            TableTheme.entries.flatMap { theme ->
+                listOf(GameType.FreeCell, GameType.Klondike(3)).map { arrayOf(theme, it) }
+            }
 
         private const val TIMEOUT = 10_000L
         private const val SMOKE_MILLIS = 9_000L

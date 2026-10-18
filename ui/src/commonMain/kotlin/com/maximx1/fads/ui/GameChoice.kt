@@ -25,12 +25,14 @@ internal val GameTypeSaver = Saver<GameType, String>(save = { it.key }, restore 
 internal fun gameName(type: GameType): String =
     when (type) {
         GameType.FreeCell -> Strings.FREECELL
+        is GameType.Klondike -> Strings.SOLITAIRE
     }
 
 /** The option [type] is played with, or `null` for a game that has none. */
 internal fun optionName(type: GameType): String? =
     when (type) {
         GameType.FreeCell -> null
+        is GameType.Klondike -> Strings.draw(type.draw)
     }
 
 /** The game and its option, as one line: "Spider, 2 suits". */
