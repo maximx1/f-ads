@@ -14,6 +14,8 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ActivityScenario
 import com.maximx1.fads.MainActivity
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.rules.Move
+import com.maximx1.fads.core.state.GameState
 import com.maximx1.fads.game.GameViewModel
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -56,7 +58,7 @@ class NewGameDialogTest {
 
     private fun inDialog(text: String) = compose.onNode(hasText(text) and hasAnyAncestor(isDialog()))
 
-    private fun savedGame(): Game? = Game.fromJson(saveFile.readText())
+    private fun savedGame(): Game<GameState, Move>? = Game.fromJson(saveFile.readText())
 
     /** The deal number is only shown in the pause dialog, so this opens it to look. */
     private fun assertGameNumber(number: Long) {

@@ -1,6 +1,8 @@
 package com.maximx1.fads.core.engine
 
 import com.maximx1.fads.core.model.Suit
+import com.maximx1.fads.core.rules.Move
+import com.maximx1.fads.core.state.GameState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
@@ -8,7 +10,7 @@ import kotlin.test.assertSame
 class ScoringTest {
     private fun dealOneAfter(moves: Int) = Game.resume(GameRecord(dealNumber = 1, moves = dealOneWin.take(moves)))
 
-    private fun Game.cardsUp() = Suit.entries.sumOf { state.foundationCount(it) }
+    private fun Game<GameState, Move>.cardsUp() = Suit.entries.sumOf { state.foundationCount(it) }
 
     @Test
     fun aFreshGameScoresNothing() {

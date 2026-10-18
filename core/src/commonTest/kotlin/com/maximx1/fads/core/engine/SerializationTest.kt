@@ -5,6 +5,7 @@ import com.maximx1.fads.core.model.Card
 import com.maximx1.fads.core.model.Suit
 import com.maximx1.fads.core.position
 import com.maximx1.fads.core.rules.Move
+import com.maximx1.fads.core.rules.replay
 import com.maximx1.fads.core.state.GameState
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -39,7 +40,7 @@ class SerializationTest {
                         Move.ColumnToFoundation(1),
                     ),
             )
-        val restored = Json.decodeFromString<GameRecord>(Json.encodeToString(record))
+        val restored = Json.decodeFromString<GameRecord<Move>>(Json.encodeToString(record))
         assertEquals(record, restored)
         assertEquals(record.replay(), restored.replay())
     }
@@ -66,11 +67,11 @@ class SerializationTest {
                 """{"type":"ch","from":4},{"type":"fc","cell":3,"to":5},{"type":"fh","cell":0},""" +
                 """{"type":"hc","suit":"HEARTS","to":6},{"type":"hf","suit":"CLUBS","cell":1}],"movesMade":9}"""
         assertEquals(json, Json.encodeToString(record))
-        assertEquals(record, Json.decodeFromString<GameRecord>(json))
+        assertEquals(record, Json.decodeFromString<GameRecord<Move>>(json))
     }
 
     @Test
     fun anEmptyRecordIsJustTheDeal() {
-        assertEquals(Deal.fromNumber(42), GameRecord(42).replay())
+        assertEquals(Deal.fromNumber(42), GameRecord<Move>(42).replay())
     }
 }

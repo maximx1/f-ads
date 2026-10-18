@@ -30,8 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maximx1.fads.core.engine.Game
-import com.maximx1.fads.core.engine.score
-import com.maximx1.fads.core.rules.canAutoComplete
+import com.maximx1.fads.core.rules.Move
 import com.maximx1.fads.core.rules.stuckCards
 import com.maximx1.fads.core.state.GameState
 import com.maximx1.fads.game.GameViewModel
@@ -100,7 +99,7 @@ fun GameScreen(
 /** The whole screen but for the dialogs: the theme's table, the game on it, and whatever the theme hangs over it. */
 @Composable
 private fun Table(
-    game: Game?,
+    game: Game<*, *>?,
     elapsedSeconds: Long,
     settings: Settings,
     viewModel: GameViewModel,
@@ -118,16 +117,17 @@ private fun Table(
 /** The clock and move count at the top, the board, and the split button at the bottom. */
 @Composable
 private fun PlayArea(
-    game: Game,
+    game: Game<*, *>,
     elapsedSeconds: Long,
     settings: Settings,
     viewModel: GameViewModel,
     onPrompt: (Prompt) -> Unit,
 ) {
     val look = settings.theme.look
-    val state = game.state
-    val suggestion = remember(state, game.moveCount) { game.hint() }
-    val finishable = remember(state) { state.canAutoComplete }
+    // Only FreeCell has a board for now.
+    val state = game.state as? GameState ?: return
+    val suggestion = remember(state, game.moveCount) { game.hint() as? Move }
+    val finishable = remember(state) { game.canAutoComplete }
     // The position a hint was asked for. The hint shows only while that is still the position on the table.
     var hintFor by remember { mutableStateOf<GameState?>(null) }
     LaunchedEffect(hintFor) {

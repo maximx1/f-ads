@@ -2,6 +2,7 @@ package com.maximx1.fads.core.engine
 
 import com.maximx1.fads.core.deal.Deal
 import com.maximx1.fads.core.rules.Move
+import com.maximx1.fads.core.rules.replay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

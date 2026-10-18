@@ -5,11 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
-import com.maximx1.fads.core.engine.score
-import com.maximx1.fads.core.rules.Move
-import com.maximx1.fads.core.rules.canAutoComplete
-import com.maximx1.fads.core.rules.canMove
-import com.maximx1.fads.core.rules.nextAutoMove
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -30,10 +25,10 @@ class GameViewModel(
     private val store: GameStore,
     private val now: () -> Long,
 ) : ViewModel() {
-    private val current = MutableStateFlow<Game?>(null)
+    private val current = MutableStateFlow<Game<*, *>?>(null)
 
     /** The game on the table. `null` only for the moment it takes to read the saved game at start-up. */
-    val game: StateFlow<Game?> = current.asStateFlow()
+    val game: StateFlow<Game<*, *>?> = current.asStateFlow()
 
     private val best = MutableStateFlow(Records())
 
@@ -49,7 +44,7 @@ class GameViewModel(
     val elapsedSeconds: StateFlow<Long> = seconds.asStateFlow()
 
     // Conflated: if moves come faster than the disk, only the newest game is written.
-    private val saves = Channel<Game>(Channel.CONFLATED)
+    private val saves = Channel<Game<*, *>>(Channel.CONFLATED)
 
     // The clock. The game holds the time counted up to [runningSince]; the stretch since then is added to it
     // whenever the clock stops, which it does around every change to the game.
@@ -78,7 +73,8 @@ class GameViewModel(
         change { it }
     }
 
-    fun play(move: Move) = change { if (it.state.canMove(move)) it.play(move) else it }
+    /** Plays [move] if it is legal in the game on the table, and does nothing otherwise. */
+    fun play(move: Any) = change { it.playIfLegal(move) }
 
     fun undo() {
         finisher?.cancel()
@@ -91,15 +87,15 @@ class GameViewModel(
      * card lands.
      */
     fun autoComplete() {
-        if (finishing || current.value?.state?.canAutoComplete != true) return
+        if (finishing || current.value?.canAutoComplete != true) return
         finishing = true
         change { it }
         finisher =
             viewModelScope.launch {
                 try {
                     while (true) {
-                        val move = current.value?.state?.nextAutoMove() ?: break
-                        change { it.play(move) }
+                        val move = current.value?.nextAutoMove() ?: break
+                        change { it.playIfLegal(move) }
                         delay(AUTO_STEP)
                     }
                 } finally {
@@ -133,10 +129,10 @@ class GameViewModel(
         current.value?.let { store.save(it) }
     }
 
-    private fun change(transform: (Game) -> Game) {
+    private fun change(transform: (Game<*, *>) -> Game<*, *>) {
         val before = current.value ?: return
         val after = transform(stopClock(before))
-        if (after.state.isWon && !before.state.isWon) record(after)
+        if (after.isWon && !before.isWon) record(after)
         show(after)
         if (after !== before) saves.trySend(after)
     }
@@ -145,16 +141,16 @@ class GameViewModel(
      * Counts a win towards the records. A win with nothing on the clock is left out: it can only come from a
      * game saved before there was a clock, and no real game could ever beat it.
      */
-    private fun record(won: Game) {
+    private fun record(won: Game<*, *>) {
         if (won.elapsedMillis <= 0) return
         val records = best.value.with(Win(won.dealNumber, won.elapsedMillis, won.movesMade, won.score))
         if (records === best.value) return
         best.value = records
-        viewModelScope.launch { store.save(records) }
+        viewModelScope.launch { store.save(records, won.type) }
     }
 
     /** Stops the clock and returns [game] with the time it counted added on. */
-    private fun stopClock(game: Game): Game {
+    private fun stopClock(game: Game<*, *>): Game<*, *> {
         ticker?.cancel()
         ticker = null
         val since = runningSince ?: return game
@@ -163,7 +159,7 @@ class GameViewModel(
     }
 
     /** Puts [game] on the table and, if its clock should be running, starts it. The clock must be stopped. */
-    private fun show(game: Game) {
+    private fun show(game: Game<*, *>) {
         current.value = game
         seconds.value = game.elapsedMillis / SECOND
         if (!visible || !game.inPlay || finishing) return

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.maximx1.fads.core.engine.Game
+import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.game.GameStore
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.game.Storage
@@ -40,7 +41,7 @@ class DesktopGameTest {
             }
         }
 
-    private fun savedGame(): Game? = saved[GameStore.GAME]?.let(Game::fromJson)
+    private fun savedGame(): Game<*, *>? = saved[GameStore.GAME]?.let(GameType.FreeCell::load)
 
     @Test
     fun theGameComesUpPlaysAMoveSavesItAndChangesTheme() {

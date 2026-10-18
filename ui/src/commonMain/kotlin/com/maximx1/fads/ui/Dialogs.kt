@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
-import com.maximx1.fads.core.engine.score
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.ui.theme.TableTheme
 
@@ -42,7 +41,7 @@ import com.maximx1.fads.ui.theme.TableTheme
  */
 @Composable
 internal fun PauseDialog(
-    game: Game,
+    game: Game<*, *>,
     elapsedSeconds: Long,
     records: Records,
     settings: Settings,
@@ -162,12 +161,12 @@ internal fun RestartDialog(
 /** Shown once the game is won, until it is closed or the position changes. */
 @Composable
 internal fun WinDialog(
-    game: Game,
+    game: Game<*, *>,
     records: Records,
     onNewGame: () -> Unit,
 ) {
     var closed by rememberSaveable(game.dealNumber, game.moveCount) { mutableStateOf(false) }
-    if (!game.state.isWon || closed) return
+    if (!game.isWon || closed) return
     AlertDialog(
         onDismissRequest = { closed = true },
         title = { Text(Strings.WIN_TITLE) },

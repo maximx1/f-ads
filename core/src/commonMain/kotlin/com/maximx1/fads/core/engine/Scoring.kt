@@ -1,13 +1,12 @@
 package com.maximx1.fads.core.engine
 
-import com.maximx1.fads.core.model.Suit
 import kotlin.math.max
 
 /**
- * How a game is scored. It climbs by [PER_CARD] for every card on a foundation and drops by [UNDO_COST] for
- * every undo and [HINT_COST] for every hint, but never below zero. A won game adds a time bonus as well:
+ * How a FreeCell game is scored. It climbs by [PER_CARD] for every card on a foundation and drops by [UNDO_COST]
+ * for every undo and [HINT_COST] for every hint, but never below zero. A won game adds a time bonus as well:
  * [TIME_BONUS] divided by the seconds it took, as Windows Solitaire did, so a win in half the time earns twice
- * the bonus.
+ * the bonus. Solitaire's score uses the same bonus.
  */
 object Scoring {
     const val PER_CARD = 10
@@ -23,12 +22,3 @@ object Scoring {
     /** The bonus for a win in [millis]. */
     fun timeBonus(millis: Long): Int = (TIME_BONUS / max(millis / MILLIS_IN_SECOND, QUICKEST_SECONDS)).toInt()
 }
-
-/** The game's score as it stands: see [Scoring]. */
-val Game.score: Int
-    get() {
-        val cards = Suit.entries.sumOf { state.foundationCount(it) }
-        val played = cards * Scoring.PER_CARD - undos * Scoring.UNDO_COST - hintsTaken * Scoring.HINT_COST
-        val bonus = if (state.isWon) Scoring.timeBonus(elapsedMillis) else 0
-        return max(0, played + bonus)
-    }

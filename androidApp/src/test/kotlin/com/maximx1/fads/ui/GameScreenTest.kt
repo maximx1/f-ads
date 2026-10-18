@@ -25,7 +25,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.maximx1.fads.MainActivity
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.Records
-import com.maximx1.fads.core.engine.score
+import com.maximx1.fads.core.rules.Move
+import com.maximx1.fads.core.state.GameState
 import com.maximx1.fads.game.FileStorage
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.ui.theme.TableTheme
@@ -70,9 +71,10 @@ class GameScreenTest {
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasTestTag(ELAPSED_TAG)).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun savedGame(): Game? = if (saveFile.exists()) Game.fromJson(saveFile.readText()) else null
+    private fun savedGame(): Game<GameState, Move>? =
+        if (saveFile.exists()) Game.fromJson(saveFile.readText()) else null
 
-    private fun waitForSave(matches: (Game) -> Boolean) =
+    private fun waitForSave(matches: (Game<GameState, Move>) -> Boolean) =
         compose.waitUntil(TIMEOUT) { savedGame()?.let(matches) == true }
 
     private fun tap(card: String) {
