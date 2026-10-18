@@ -25,7 +25,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -43,6 +45,7 @@ import kotlinx.coroutines.delay
  * A finished game played back move by move on its own table, which takes no touches. The player steps back and
  * forward, or lets it play at one of a few speeds.
  */
+@OptIn(ExperimentalComposeUiApi::class) // For the back handler, which is still marked experimental.
 @Composable
 internal fun WatchScreen(
     played: Played,
@@ -50,6 +53,8 @@ internal fun WatchScreen(
     onClose: () -> Unit,
 ) {
     val game = remember(played) { played.load() }
+    // The system back button or gesture goes where the Back button does.
+    BackHandler(onBack = onClose)
     Box(Modifier.fillMaxSize()) {
         Spacer(Modifier.fillMaxSize().graphicsLayer().drawBehind { with(look) { drawTable() } })
         if (game == null) {

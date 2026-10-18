@@ -93,7 +93,11 @@ fun GameScreen(
                     watching = it
                     screen = Screen.WATCH
                 },
-                onClose = { screen = Screen.TABLE },
+                // Back to the game, paused as it was when the history was opened.
+                onClose = {
+                    prompt = Prompt.PAUSED
+                    screen = Screen.TABLE
+                },
             )
         }
 

@@ -90,6 +90,27 @@ class HistoryTest {
     }
 
     @Test
+    fun backFromTheHistoryIsThePauseMenuWhetherByTheButtonOrThePhonesBack() {
+        openHistory()
+        compose.onNodeWithText("Back").performClick()
+        compose.onNode(hasText("Paused") and hasAnyAncestor(isDialog())).assertExists()
+
+        compose.onNode(hasText("History") and hasAnyAncestor(isDialog())).performClick()
+        compose.waitForIdle()
+        scenario!!.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        compose.onNode(hasText("Paused") and hasAnyAncestor(isDialog())).assertExists()
+
+        // From watching a game, the phone's back goes to the history.
+        compose.onNode(hasText("History") and hasAnyAncestor(isDialog())).performClick()
+        compose.onNodeWithText("Watch").performClick()
+        compose.onNodeWithTag(WATCH_STEP_TAG).assertExists()
+        scenario!!.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        compose.onNodeWithTag(HISTORY_SEARCH_TAG).assertExists()
+    }
+
+    @Test
     fun watchingStepsThroughTheMovesAndPlayAgainDealsTheSameNumberFresh() {
         openHistory()
         compose.onNodeWithText("Watch").performClick()

@@ -27,7 +27,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -40,6 +42,7 @@ import kotlin.time.Instant
  * Every game played, newest first, to search by deal number and narrow to one game or to wins. Each can be
  * played again from its first card, or watched move by move as it was played.
  */
+@OptIn(ExperimentalComposeUiApi::class) // For the back handler, which is still marked experimental.
 @Composable
 internal fun HistoryScreen(
     history: History,
@@ -57,6 +60,8 @@ internal fun HistoryScreen(
             history.search(number, type = { game == null || gameName(it) == game }, wonOnly = wonOnly)
         }
 
+    // The system back button or gesture goes where the Back button does.
+    BackHandler(onBack = onClose)
     Surface(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = Gutter)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

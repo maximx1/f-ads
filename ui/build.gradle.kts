@@ -30,6 +30,8 @@ kotlin {
             api(libs.compose.mp.material3)
             api(libs.lifecycle.mp.viewmodel)
             implementation(libs.lifecycle.mp.runtime.compose)
+            // The system back button and gesture, on every platform that has one.
+            implementation(libs.compose.mp.ui.backhandler)
             implementation(libs.kotlinx.coroutines.core)
         }
     }
