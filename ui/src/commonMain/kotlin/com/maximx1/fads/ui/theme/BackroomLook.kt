@@ -31,6 +31,7 @@ import com.maximx1.fads.core.model.Card
 import com.maximx1.fads.core.model.SuitColor
 import com.maximx1.fads.ui.CardStyle
 import com.maximx1.fads.ui.drawPips
+import com.maximx1.fads.ui.drawPlainBack
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.random.Random
@@ -90,6 +91,9 @@ private fun DrawScope.reach(bulb: Offset) = hypot(max(bulb.x, size.width - bulb.
 private class WornCards(
     private val measurer: TextMeasurer,
 ) : CardStyle {
+    // Old red, the lattice faded to the colour of the paper.
+    override fun DrawScope.drawBack() = drawPlainBack(CardBack, CardBackLines)
+
     private val wear = HashMap<Card, Wear>()
     private var grime = emptyList<Brush>()
     private var wornAt = Size.Unspecified
@@ -244,3 +248,5 @@ private const val FEWEST_CHIPS = 2
 private const val EXTRA_CHIPS = 4
 private const val CARDS_PER_CREASE = 3
 private const val SIDES = 4
+private val CardBack = Color(0xFF7A1F1F)
+private val CardBackLines = Color(0x33F0D9A8)

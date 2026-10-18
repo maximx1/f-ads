@@ -12,8 +12,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
-import com.maximx1.fads.ui.BoardLayout
 import com.maximx1.fads.ui.CardStyle
+import com.maximx1.fads.ui.Header
 
 /** Everything about the screen that changes with the [TableTheme]. */
 internal interface Look {
@@ -33,8 +33,8 @@ internal interface Look {
     /** Room left between the board and the table around it, for a [pane] to have a frame of table. */
     val boardPadding: PaddingValues get() = PaddingValues()
 
-    /** Painted across the board, under the cards and the outlines of the empty places. */
-    val pane: (DrawScope.(BoardLayout) -> Unit)? get() = null
+    /** Painted across the board, under the cards and the outlines of the empty places, given its top row if any. */
+    val pane: (DrawScope.(Header?) -> Unit)? get() = null
 
     /** Paints the table. It fills the whole screen, under the system bars too. */
     fun DrawScope.drawTable()

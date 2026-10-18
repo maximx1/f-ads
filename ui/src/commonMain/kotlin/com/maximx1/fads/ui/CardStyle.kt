@@ -4,11 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.text.TextMeasurer
@@ -21,11 +23,42 @@ import com.maximx1.fads.core.model.Suit
 import com.maximx1.fads.core.model.SuitColor
 
 /**
- * Draws one card face, filling the draw area. The board only knows this interface, so real card designs can
- * replace [PlaceholderCardStyle] without touching the layout or the rules.
+ * Draws one card, face or back, filling the draw area. The board only knows this interface, so real card designs
+ * can replace [PlaceholderCardStyle] without touching the layout or the rules.
  */
 fun interface CardStyle {
     fun DrawScope.drawCard(card: Card)
+
+    /** The back of a card that lies face down. A plain blue one unless a style has its own. */
+    fun DrawScope.drawBack() = drawPlainBack(PlainBack, PlainBackLines)
+}
+
+/**
+ * A card back: [face] edge to edge inside a rounded border, crossed by a diamond lattice in [lines] inside a
+ * white margin.
+ */
+fun DrawScope.drawPlainBack(
+    face: Color,
+    lines: Color,
+) {
+    val width = size.width
+    val corner = CornerRadius(width * BACK_CORNER)
+    drawRoundRect(Color.White, cornerRadius = corner)
+    drawRoundRect(BackEdge, cornerRadius = corner, style = Stroke(width * BACK_EDGE))
+    val margin = width * BACK_MARGIN
+    val inner = Size(width - margin * 2, size.height - margin * 2)
+    val innerCorner = CornerRadius(width * BACK_CORNER / 2)
+    drawRoundRect(face, Offset(margin, margin), inner, innerCorner)
+    clipRect(margin, margin, width - margin, size.height - margin) {
+        val step = width * BACK_LATTICE
+        val stroke = width * BACK_LINE
+        var x = -size.height
+        while (x < width + size.height) {
+            drawLine(lines, Offset(x, 0f), Offset(x + size.height, size.height), stroke)
+            drawLine(lines, Offset(x + size.height, 0f), Offset(x, size.height), stroke)
+            x += step
+        }
+    }
 }
 
 @Composable
@@ -142,6 +175,17 @@ private object SuitShapes {
 }
 
 private const val TEXT_CACHE_SIZE = 32
+
+private val PlainBack = Color(0xFF1F4E9C)
+private val PlainBackLines = Color(0x33FFFFFF)
+private val BackEdge = Color(0xFF9E9E9E)
+
+// Fractions of the card's width, for the back.
+private const val BACK_CORNER = 0.09f
+private const val BACK_EDGE = 0.015f
+private const val BACK_MARGIN = 0.07f
+private const val BACK_LATTICE = 0.16f
+private const val BACK_LINE = 0.02f
 
 // Fractions of the card's width.
 private const val PADDING = 0.08f

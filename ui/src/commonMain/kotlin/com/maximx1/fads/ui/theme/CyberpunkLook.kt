@@ -19,6 +19,7 @@ import com.maximx1.fads.core.model.Card
 import com.maximx1.fads.core.model.SuitColor
 import com.maximx1.fads.ui.CardStyle
 import com.maximx1.fads.ui.drawPips
+import com.maximx1.fads.ui.drawPlainBack
 
 /** Neon on black: a night-city grid, cut-corner panels, and dark cards lit pink and cyan. */
 internal object CyberpunkLook : Look {
@@ -67,6 +68,9 @@ internal object CyberpunkLook : Look {
 private class NeonCards(
     private val measurer: TextMeasurer,
 ) : CardStyle {
+    // Near black under a magenta neon lattice.
+    override fun DrawScope.drawBack() = drawPlainBack(CardBack, CardBackLines)
+
     override fun DrawScope.drawCard(card: Card) {
         val width = size.width
         val corner = CornerRadius(width * CARD_CORNER)
@@ -109,3 +113,5 @@ private const val HALO_ALPHA = 0.16f
 private const val TUBE = 0.025f
 private const val GLOW = 0.12f
 private const val CARD_CORNER = 0.06f
+private val CardBack = Color(0xFF12001F)
+private val CardBackLines = Color(0xB3FF2BD6)

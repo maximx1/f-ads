@@ -19,11 +19,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.model.Card
 import com.maximx1.fads.core.model.SuitColor
-import com.maximx1.fads.core.state.GameState
-import com.maximx1.fads.ui.BoardLayout
 import com.maximx1.fads.ui.CardStyle
-import com.maximx1.fads.ui.FoundationOrder
+import com.maximx1.fads.ui.Header
 import com.maximx1.fads.ui.drawPips
+import com.maximx1.fads.ui.drawPlainBack
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -59,7 +58,7 @@ internal object BrushedMetalLook : Look {
             fill = { drawRect(Gloss.downward()) },
         )
     override val boardPadding = PaddingValues(start = 8.dp, top = 4.dp, end = 8.dp)
-    override val pane: DrawScope.(BoardLayout) -> Unit = { drawList(it) }
+    override val pane: DrawScope.(Header?) -> Unit = { drawList(it) }
 
     override fun DrawScope.drawTable() {
         drawRect(Aluminium.downward())
@@ -70,26 +69,26 @@ internal object BrushedMetalLook : Look {
     override fun cards(measurer: TextMeasurer): CardStyle = PaperCards(measurer)
 }
 
-/** The board as a white list, with a header behind the free cells and foundations split between the two. */
-private fun DrawScope.drawList(layout: BoardLayout) {
+/** The board as a white list, with a glossy grey header behind its top row, split where its groups meet. */
+private fun DrawScope.drawList(header: Header?) {
     val line = 1.dp.toPx()
-    // Half way down the double gap under the top row.
-    val headerBottom = layout.columnsTop - layout.gap
-
     drawRect(ListBackground)
-    drawRect(Header.downward(headerBottom), size = Size(size.width, headerBottom))
-    drawLine(HeaderEdge, Offset(0f, headerBottom - line / 2), Offset(size.width, headerBottom - line / 2), line)
-    val lastCellEnd = layout.freeCell(GameState.FREE_CELL_COUNT - 1).x + layout.cardWidth
-    val split = (lastCellEnd + layout.foundation(FoundationOrder.first()).x) / 2
-    val inset = HEADER_LINE_INSET.dp.toPx()
-    drawLine(HeaderLine, Offset(split, inset), Offset(split, headerBottom - inset), line)
-
+    if (header != null) {
+        drawRect(HeaderGloss.downward(header.bottom), size = Size(size.width, header.bottom))
+        val edge = header.bottom - line / 2
+        drawLine(HeaderEdge, Offset(0f, edge), Offset(size.width, edge), line)
+        val inset = HEADER_LINE_INSET.dp.toPx()
+        for (x in header.dividers) drawLine(HeaderLine, Offset(x, inset), Offset(x, header.bottom - inset), line)
+    }
     drawRect(PaneEdge, style = Stroke(line))
 }
 
 private class PaperCards(
     private val measurer: TextMeasurer,
 ) : CardStyle {
+    // Aqua blue, the colour of a selected row.
+    override fun DrawScope.drawBack() = drawPlainBack(CardBack, CardBackLines)
+
     override fun DrawScope.drawCard(card: Card) {
         val corner = CornerRadius(size.width * CARD_CORNER)
         drawRoundRect(CardShadow, Offset(0f, size.width * SHADOW_DROP), cornerRadius = corner)
@@ -142,7 +141,7 @@ private val Engraving = Color(0x99FFFFFF)
 
 private val ListBackground = Color.White
 private val PaneEdge = Color(0xFF6B6B6B)
-private val Header =
+private val HeaderGloss =
     arrayOf(
         0f to Color(0xFFFFFFFF),
         0.5f to Color(0xFFF1F1F1),
@@ -161,3 +160,5 @@ private val BlackInk = TextStyle(color = Color(0xFF1C1C1C))
 private const val CARD_CORNER = 0.11f
 private const val CARD_EDGE = 0.012f
 private const val SHADOW_DROP = 0.03f
+private val CardBack = Color(0xFF3D80DF)
+private val CardBackLines = Color(0x40FFFFFF)

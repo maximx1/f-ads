@@ -15,6 +15,7 @@ import com.maximx1.fads.core.model.Card
 import com.maximx1.fads.core.model.SuitColor
 import com.maximx1.fads.ui.CardStyle
 import com.maximx1.fads.ui.drawPips
+import com.maximx1.fads.ui.drawPlainBack
 
 /** Windows Vista's Aero: a blue-green sky with streaks of light, and glass with a hard shine across its top half. */
 internal object VistaLook : Look {
@@ -54,6 +55,9 @@ internal object VistaLook : Look {
 private class GlassCards(
     private val measurer: TextMeasurer,
 ) : CardStyle {
+    // Deep sky blue under a lattice of light.
+    override fun DrawScope.drawBack() = drawPlainBack(CardBack, CardBackLines)
+
     override fun DrawScope.drawCard(card: Card) {
         val corner = CornerRadius(size.width * CARD_CORNER)
         drawRoundRect(CardShine.downward(), cornerRadius = corner)
@@ -108,3 +112,5 @@ private val RedInk = TextStyle(color = Color(0xFFC4161C))
 private val BlackInk = TextStyle(color = Color(0xFF14202E))
 private const val CARD_CORNER = 0.1f
 private const val CARD_EDGE = 0.02f
+private val CardBack = Color(0xFF0D5E92)
+private val CardBackLines = Color(0x5C8AD8FF)
