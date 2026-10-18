@@ -3,6 +3,7 @@ package com.maximx1.fads.ui
 /** Every piece of text the game shows, in one place so that it can be translated one day. */
 internal object Strings {
     const val UNDO = "Undo"
+    const val AUTO_COMPLETE = "Auto-complete"
     const val RESTART = "Restart"
     const val NEW_GAME = "New"
     const val HINT = "Hint"

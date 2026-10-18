@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.score
+import com.maximx1.fads.core.rules.canAutoComplete
 import com.maximx1.fads.core.rules.stuckCards
 import com.maximx1.fads.core.state.GameState
 import com.maximx1.fads.game.GameViewModel
@@ -126,6 +127,7 @@ private fun PlayArea(
     val look = settings.theme.look
     val state = game.state
     val suggestion = remember(state, game.moveCount) { game.hint() }
+    val finishable = remember(state) { state.canAutoComplete }
     // The position a hint was asked for. The hint shows only while that is still the position on the table.
     var hintFor by remember { mutableStateOf<GameState?>(null) }
     LaunchedEffect(hintFor) {
@@ -157,6 +159,7 @@ private fun PlayArea(
             segments =
                 listOf(
                     Segment(Strings.UNDO, Glyph.UNDO, game.canUndo, viewModel::undo),
+                    Segment(Strings.AUTO_COMPLETE, Glyph.AUTO_COMPLETE, finishable, viewModel::autoComplete),
                     Segment(Strings.RESTART, Glyph.RESTART, game.canUndo) { onPrompt(Prompt.RESTART) },
                     Segment(Strings.NEW_GAME, Glyph.NEW_GAME) { onPrompt(Prompt.NEW_GAME) },
                     Segment(Strings.HINT, Glyph.HINT, suggestion != null) {

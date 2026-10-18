@@ -7,7 +7,9 @@ import com.maximx1.fads.core.engine.Records
 import com.maximx1.fads.core.engine.Win
 import com.maximx1.fads.core.engine.score
 import com.maximx1.fads.core.rules.Move
+import com.maximx1.fads.core.rules.canAutoComplete
 import com.maximx1.fads.core.rules.canMove
+import com.maximx1.fads.core.rules.nextAutoMove
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -55,6 +57,10 @@ class GameViewModel(
     private var runningSince: Long? = null
     private var ticker: Job? = null
 
+    // Plays the cards up one by one once the game can finish itself. The clock stands still while it does.
+    private var finisher: Job? = null
+    private var finishing = false
+
     init {
         viewModelScope.launch {
             best.value = store.loadRecords()
@@ -74,14 +80,49 @@ class GameViewModel(
 
     fun play(move: Move) = change { if (it.state.canMove(move)) it.play(move) else it }
 
-    fun undo() = change { it.undo() }
+    fun undo() {
+        finisher?.cancel()
+        change { it.undo() }
+    }
+
+    /**
+     * Plays every card left up to its foundation, one at a time so the player sees each go, if the game can
+     * finish itself. Each card counts as a move. The time stops when the button is pressed, not when the last
+     * card lands.
+     */
+    fun autoComplete() {
+        if (finishing || current.value?.state?.canAutoComplete != true) return
+        finishing = true
+        change { it }
+        finisher =
+            viewModelScope.launch {
+                try {
+                    while (true) {
+                        val move = current.value?.state?.nextAutoMove() ?: break
+                        change { it.play(move) }
+                        delay(AUTO_STEP)
+                    }
+                } finally {
+                    finishing = false
+                    finisher = null
+                    // If it was stopped part way, the game goes on and so does its clock.
+                    change { it }
+                }
+            }
+    }
 
     /** Counts a hint against the score. Showing it is up to the screen. */
     fun takeHint() = change { it.takeHint() }
 
-    fun restart() = change { it.restart() }
+    fun restart() {
+        finisher?.cancel()
+        change { it.restart() }
+    }
 
-    fun newGame(dealNumber: Long) = change { Game.start(dealNumber) }
+    fun newGame(dealNumber: Long) {
+        finisher?.cancel()
+        change { Game.start(dealNumber) }
+    }
 
     /**
      * Stops the clock and writes the game out, returning once it is safely saved. For a platform that is about
@@ -125,7 +166,7 @@ class GameViewModel(
     private fun show(game: Game) {
         current.value = game
         seconds.value = game.elapsedMillis / SECOND
-        if (!visible || !game.inPlay) return
+        if (!visible || !game.inPlay || finishing) return
         val since = now()
         runningSince = since
         ticker =
@@ -141,6 +182,7 @@ class GameViewModel(
     companion object {
         const val MAX_RANDOM_DEAL = 1_000_000L
         private const val SECOND = 1000L
+        private const val AUTO_STEP = 80L
 
         fun randomDealNumber(): Long = Random.nextLong(1, MAX_RANDOM_DEAL + 1)
     }

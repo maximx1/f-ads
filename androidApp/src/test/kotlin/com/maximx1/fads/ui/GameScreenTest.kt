@@ -172,7 +172,7 @@ class GameScreenTest {
 
         val lowestCard = compose.onNodeWithTag("3D").fetchSemanticsNode().boundsInRoot
         val parts =
-            listOf("Undo", "Restart", "New", "Hint", "Pause").map {
+            listOf("Undo", "Auto-complete", "Restart", "New", "Hint", "Pause").map {
                 compose.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot
             }
         for (part in parts) {
@@ -341,6 +341,23 @@ class GameScreenTest {
         val right = moves().fetchSemanticsNode().boundsInRoot
         assertTrue(left.right < clock().fetchSemanticsNode().boundsInRoot.left)
         assertTrue(left.top < right.bottom && right.top < left.bottom)
+    }
+
+    @Test
+    fun autoCompleteIsOnlyOfferedOnceTheGameCanFinishAndThenPlaysEveryCardUp() {
+        launch("""{"dealNumber":1}""")
+        compose.onNodeWithContentDescription("Auto-complete").assertIsNotEnabled()
+        scenario!!.close()
+
+        val oneMoveLeft = checkNotNull(javaClass.getResource("/deal-1-one-move-left.json")).readText()
+        launch(oneMoveLeft)
+        letPass(seconds = 30)
+        compose.onNodeWithContentDescription("Auto-complete").assertIsEnabled().performClick()
+        letPass(seconds = 2)
+        inDialog("You won!").assertExists()
+        // The clock stopped at the press, not when the last card landed.
+        waitForSave { it.state.isWon && it.elapsedMillis in 30_000..30_999 }
+        compose.onNodeWithContentDescription("Auto-complete").assertIsNotEnabled()
     }
 
     @Test

@@ -23,6 +23,9 @@ internal enum class Glyph {
     /** An arrow that goes out to the right, turns, and comes back pointing left. */
     UNDO,
 
+    /** Two chevrons pointing up, one above the other: everything goes up to the foundations. */
+    AUTO_COMPLETE,
+
     /** An arrow bent anticlockwise into a circle, with a gap between its tail and its point. */
     RESTART,
 
@@ -45,6 +48,10 @@ internal fun DrawScope.drawGlyph(
         when (glyph) {
             Glyph.UNDO -> {
                 drawPath(UndoArrow, color, style = Line)
+            }
+
+            Glyph.AUTO_COMPLETE -> {
+                drawPath(Chevrons, color, style = Line)
             }
 
             Glyph.RESTART -> {
@@ -79,6 +86,8 @@ private val ThinLine = Stroke(width = 1.7f, join = StrokeJoin.Round)
 private fun path(data: String): Path = PathParser().parsePathString(data).toPath()
 
 private val UndoArrow = path("M8.5,5.5 L4,10 L8.5,14.5 M4,10 H14.5 A4.75,4.75 0 0 1 14.5,19.5 H9")
+
+private val Chevrons = path("M6,12 L12,6 L18,12 M6,19 L12,13 L18,19")
 
 // The circle starts at its tail, low on the left, runs anticlockwise round the bottom and ends at the top, where
 // the point takes over. The stretch between the point and the tail is left open.
