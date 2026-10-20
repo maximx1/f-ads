@@ -3,6 +3,7 @@ package com.maximx1.fads.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -218,6 +219,8 @@ internal fun WinDialog(
 ) {
     var closed by rememberSaveable(game.dealNumber, game.moveCount) { mutableStateOf(false) }
     if (!game.isWon || closed) return
+    // Over the table and under the dialog, which has a window of its own.
+    Fireworks(Modifier.fillMaxSize())
     AlertDialog(
         onDismissRequest = { closed = true },
         title = { Text(Strings.WIN_TITLE) },
