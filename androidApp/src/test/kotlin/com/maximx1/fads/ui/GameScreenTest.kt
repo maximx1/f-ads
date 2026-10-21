@@ -344,6 +344,27 @@ class GameScreenTest {
     }
 
     @Test
+    fun theWinCanDealAnotherGameStraightAway() {
+        val oneMoveLeft = checkNotNull(javaClass.getResource("/deal-1-one-move-left.json")).readText()
+        launch(oneMoveLeft)
+        tap(
+            Game
+                .fromJson(oneMoveLeft)!!
+                .state.columns[0]
+                .last()
+                .code,
+        )
+
+        inDialog("FreeCell").assertIsSelected()
+        inDialog("Spider").performClick()
+        inDialog("1 suit").assertIsSelected()
+        inDialog("New game").performClick()
+
+        compose.waitUntil(TIMEOUT) { settings().gameType == GameType.Spider(1) }
+        compose.onNodeWithText("You won!").assertDoesNotExist()
+    }
+
+    @Test
     fun theScoreSitsOnTheLeftOppositeTheMoves() {
         val oneMoveLeft = checkNotNull(javaClass.getResource("/deal-1-one-move-left.json")).readText()
         launch(oneMoveLeft)

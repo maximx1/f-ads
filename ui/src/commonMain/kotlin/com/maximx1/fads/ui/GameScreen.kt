@@ -174,7 +174,14 @@ private fun Prompts(
             }
 
             Prompt.NONE -> {
-                WinDialog(current, records, onNewGame = { viewModel.newGame(GameViewModel.randomDealNumber()) })
+                WinDialog(
+                    current,
+                    records,
+                    onNewGame = {
+                        settings.gameType = it
+                        viewModel.newGame(it, GameViewModel.randomDealNumber())
+                    },
+                )
             }
         }
     }

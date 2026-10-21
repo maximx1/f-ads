@@ -210,14 +210,18 @@ internal fun RestartDialog(
     )
 }
 
-/** Shown once the game is won, until it is closed or the position changes. */
+/**
+ * Shown once the game is won, until it is closed or the position changes. New game deals a random game of whichever
+ * game is picked in it, which starts on the one just won.
+ */
 @Composable
 internal fun WinDialog(
     game: Game<*, *>,
     records: Records,
-    onNewGame: () -> Unit,
+    onNewGame: (GameType) -> Unit,
 ) {
     var closed by rememberSaveable(game.dealNumber, game.moveCount) { mutableStateOf(false) }
+    var next by rememberSaveable(game.type, stateSaver = GameTypeSaver) { mutableStateOf(game.type) }
     if (!game.isWon || closed) return
     // Over the table and under the dialog, which has a window of its own.
     Fireworks(Modifier.fillMaxSize())
@@ -225,7 +229,7 @@ internal fun WinDialog(
         onDismissRequest = { closed = true },
         title = { Text(Strings.WIN_TITLE) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(Strings.winText(game.dealNumber, game.movesMade, clockTextOfMillis(game.elapsedMillis)))
                 Text(Strings.score(game.score))
                 val win = Win(game.dealNumber, game.elapsedMillis, game.movesMade, game.score)
@@ -241,9 +245,11 @@ internal fun WinDialog(
                     highest == win -> Text(Strings.NEW_HIGH_SCORE)
                     else -> Text(Strings.highScore(highest.score))
                 }
+                Heading(Strings.NEXT_GAME)
+                GameChoice(next, onChoose = { next = it })
             }
         },
-        confirmButton = { TextButton(onClick = onNewGame) { Text(Strings.WIN_NEW_GAME) } },
+        confirmButton = { TextButton(onClick = { onNewGame(next) }) { Text(Strings.WIN_NEW_GAME) } },
         dismissButton = { TextButton(onClick = { closed = true }) { Text(Strings.CLOSE) } },
     )
 }

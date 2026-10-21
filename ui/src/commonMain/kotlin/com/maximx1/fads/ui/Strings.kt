@@ -37,6 +37,7 @@ internal object Strings {
 
     const val WIN_TITLE = "You won!"
     const val WIN_NEW_GAME = "New game"
+    const val NEXT_GAME = "Next game"
     const val CLOSE = "Close"
 
     const val HISTORY = "History"
