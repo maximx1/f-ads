@@ -4,6 +4,7 @@ import com.maximx1.fads.core.den.BetKind
 import com.maximx1.fads.core.den.HandCategory
 import com.maximx1.fads.core.den.Outcome
 import com.maximx1.fads.core.den.PokerGame
+import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.core.den.Said
 
 /** Every piece of text the game shows, in one place so that it can be translated one day. */
@@ -81,6 +82,8 @@ internal object Strings {
     const val RED = "Red"
     const val BLACK = "Black"
     const val GREEN = "Green"
+    const val HIGH_ROLLERS = "The High Rollers' Room"
+    const val ENTER = "Enter"
     const val THEMES = "Themes"
     const val SHOP = "Shop"
     const val BUY = "Buy"
@@ -171,6 +174,19 @@ internal object Strings {
             BetKind.ODD -> "Odd"
             else -> null
         }
+
+    fun highRollersText(
+        entry: Long,
+        leastBet: Long,
+    ) = "Open to purses of ${bronzes(entry)} or more. Every bet there starts at ${grouped(leastBet)}."
+
+    fun leastBet(bronzes: Long) = "Every bet starts at ${bronzes(bronzes)}."
+
+    /** A table's name, and the room it is in if that is not the den's floor. */
+    fun tableName(
+        name: String,
+        room: Room,
+    ) = if (room == Room.FLOOR) name else "High Rollers' $name"
 
     fun buyText(
         theme: String,

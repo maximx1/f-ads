@@ -25,6 +25,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -58,9 +59,11 @@ import com.maximx1.fads.core.den.BetKind
 import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.den.PocketColor
 import com.maximx1.fads.core.den.Purse
+import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.core.den.Roulette
 import com.maximx1.fads.core.den.Wheel
 import com.maximx1.fads.core.den.canRebet
+import com.maximx1.fads.core.den.roulette
 import com.maximx1.fads.game.DenActions
 import com.maximx1.fads.ui.Strings
 
@@ -72,11 +75,14 @@ import com.maximx1.fads.ui.Strings
 @Composable
 internal fun RouletteScreen(
     den: Den,
+    room: Room,
     actions: DenActions,
     onClose: () -> Unit,
 ) {
-    var coin by rememberSaveable { mutableStateOf(Coin.BRONZE) }
-    val roulette = den.roulette
+    val chips = chipsFor(room)
+    // The smallest chip until another is chosen.
+    var chosen by rememberSaveable { mutableIntStateOf(chips.lastIndex) }
+    val roulette = den.roulette(room)
     var settled by rememberSaveable { mutableLongStateOf(roulette.spins) }
     val spinning = settled != roulette.spins
     val last = roulette.last
@@ -87,7 +93,17 @@ internal fun RouletteScreen(
     val theme = denTheme(den.theme)
     Box(Modifier.fillMaxSize().drawBehind { drawFelt(theme) }) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
-            Table(den, actions, coin, spinning, purse, onCoin = { coin = it }, onSettled = { settled = it }, onClose)
+            Table(
+                den,
+                room,
+                actions,
+                chosen,
+                spinning,
+                purse,
+                onChip = { chosen = it },
+                onSettled = { settled = it },
+                onClose,
+            )
         }
     }
 }
@@ -97,19 +113,24 @@ internal fun RouletteScreen(
 @Suppress("LongParameterList") // The table and the few things about it that only the screen keeps.
 private fun Table(
     den: Den,
+    room: Room,
     actions: DenActions,
-    coin: Coin,
+    chosen: Int,
     spinning: Boolean,
     purse: Purse,
-    onCoin: (Coin) -> Unit,
+    onChip: (Int) -> Unit,
     onSettled: (Long) -> Unit,
     onClose: () -> Unit,
 ) {
-    val roulette = den.roulette
+    val roulette = den.roulette(room)
     val last = roulette.last
     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(Strings.ROULETTE, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+            Text(
+                Strings.tableName(Strings.ROULETTE, room),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f),
+            )
             TextButton(onClick = onClose) { Text(Strings.BACK) }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -138,47 +159,50 @@ private fun Table(
         BettingLayout(
             roulette,
             enabled = !spinning,
-            onTap = { actions.placeBet(it, coin.worth) },
+            onTap = { actions.placeBet(it, chipsFor(room)[chosen].worth, room) },
             modifier = Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp),
         )
-        Controls(den, coin, spinning, onCoin = onCoin, actions = actions)
+        Controls(den, room, chosen, spinning, onChip = onChip, actions = actions)
     }
 }
 
-/** The coins to bet with, and the buttons to clear the layout, bet the same again, and spin. */
+/** The chips to bet with, and the buttons to clear the layout, bet the same again, and spin. */
 @Composable
+@Suppress("LongParameterList") // The table, the chip chosen, and what the buttons do.
 private fun Controls(
     den: Den,
-    coin: Coin,
+    room: Room,
+    chosen: Int,
     spinning: Boolean,
-    onCoin: (Coin) -> Unit,
+    onChip: (Int) -> Unit,
     actions: DenActions,
 ) {
-    val bets = den.roulette.bets.isNotEmpty()
+    val bets = den.roulette(room).bets.isNotEmpty()
     Row(
         Modifier.fillMaxWidth().padding(bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        for (each in Coin.entries) {
-            Canvas(
-                Modifier
-                    .size(ChipSize)
-                    .then(if (each == coin) Modifier.border(3.dp, Color.White, CircleShape) else Modifier)
-                    .clip(CircleShape)
-                    .clickable { onCoin(each) }
-                    .semantics { contentDescription = Strings.betIn(each.label) }
-                    .testTag(chipTag(each)),
-            ) { drawCoin(each) }
+        chipsFor(room).forEachIndexed { index, chip ->
+            ChipButton(
+                chip,
+                chosen = index == chosen,
+                description = Strings.betIn(chip.coin.label),
+                onClick = { onChip(index) },
+                modifier = Modifier.size(ChipSize).testTag(chipTag(chip.coin)),
+            )
         }
         Box(Modifier.weight(1f))
         // Clearing does something only with bets down, and betting the same again only with none.
         if (bets) {
-            OutlinedButton(onClick = actions::clearBets, enabled = !spinning) { Text(Strings.CLEAR) }
+            OutlinedButton(onClick = { actions.clearBets(room) }, enabled = !spinning) { Text(Strings.CLEAR) }
         } else {
-            OutlinedButton(onClick = actions::rebet, enabled = den.canRebet && !spinning) { Text(Strings.REBET) }
+            OutlinedButton(
+                onClick = { actions.rebet(room) },
+                enabled = den.canRebet(room) && !spinning,
+            ) { Text(Strings.REBET) }
         }
-        Button(onClick = actions::spin, enabled = bets && !spinning) { Text(Strings.SPIN) }
+        Button(onClick = { actions.spin(room) }, enabled = bets && !spinning) { Text(Strings.SPIN) }
     }
 }
 

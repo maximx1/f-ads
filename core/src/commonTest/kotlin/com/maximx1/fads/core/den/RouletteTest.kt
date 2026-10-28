@@ -83,12 +83,14 @@ class RouletteTest {
         assertEquals(16, den.roulette.staked)
         assertFailsWith<IllegalArgumentException> { den.placeBet(red, 85) }
         assertFailsWith<IllegalArgumentException> { den.placeBet(red, 0) }
-        assertFailsWith<IllegalArgumentException>("under the table's minimum") { den.placeBet(red, 5, minimum = 10) }
+        assertFailsWith<IllegalArgumentException>("under the high rollers' least bet") {
+            den.placeBet(red, 5, Room.HIGH_ROLLERS)
+        }
 
         den = den.clearBets()
         assertEquals(Purse(100), den.purse)
         assertEquals(0, den.stakeOn(red))
-        assertFalse(den.canRebet, "no spin yet")
+        assertFalse(den.canRebet(), "no spin yet")
     }
 
     @Test
@@ -124,15 +126,15 @@ class RouletteTest {
         val bets = Den(purse = Purse(30)).placeBet(Bet(BetKind.DOZEN, 2), 10).placeBet(Bet(BetKind.COLUMN, 1), 10)
         val spun = bets.spin(spinLandingOn(1))
         assertEquals(Purse(10), spun.purse, "1 is in neither")
-        assertFalse(spun.canRebet, "20 down again needs more than 10")
+        assertFalse(spun.canRebet(), "20 down again needs more than 10")
         assertFailsWith<IllegalArgumentException> { spun.rebet() }
 
         val richer = spun.copy(purse = Purse(25))
-        assertTrue(richer.canRebet)
+        assertTrue(richer.canRebet())
         val again = richer.rebet()
         assertEquals(bets.roulette.bets, again.roulette.bets)
         assertEquals(Purse(5), again.purse)
-        assertFalse(again.canRebet, "the bets are already down")
+        assertFalse(again.canRebet(), "the bets are already down")
         assertFailsWith<IllegalArgumentException> { Den().spin(1) }
     }
 

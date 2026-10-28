@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.Purse
+import com.maximx1.fads.core.den.Room
+import com.maximx1.fads.core.den.canEnter
 import com.maximx1.fads.core.engine.History
 import com.maximx1.fads.game.DenActions
 import com.maximx1.fads.ui.Strings
@@ -58,61 +60,57 @@ internal fun DenScreen(
 ) {
     var table by rememberSaveable { mutableStateOf<DenGame?>(null) }
     var shopping by rememberSaveable { mutableStateOf(false) }
+    var room by rememberSaveable { mutableStateOf(Room.FLOOR) }
     val theme = denTheme(den?.theme ?: Den.HOUSE_THEME)
+    val ways =
+        DenWays(
+            // Out of the high rollers' room onto the floor, and off the floor out of the den.
+            onClose = if (room == Room.FLOOR) onClose else ({ room = Room.FLOOR }),
+            onTable = { table = it },
+            onShop = { shopping = true },
+            onRoom = { room = it },
+        )
+    val getUp = { table = null }
     // Everything in the den is dressed in its theme: its felt, and the colour of its buttons.
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = theme.accent)) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             Box(Modifier.fillMaxSize().drawBehind { drawFelt(theme) }) {
                 val sitting = if (den == null) null else table
                 when {
-                    den == null || (sitting == null && !shopping) -> {
-                        Menu(den, history, actions, onClose, onTable = { table = it }, onShop = { shopping = true })
-                    }
-
-                    sitting == DenGame.ROULETTE -> {
-                        RouletteScreen(den, actions, onClose = { table = null })
-                    }
-
-                    sitting == DenGame.FIVE_CARD_DRAW -> {
-                        PokerScreen(PokerGame.DRAW, den, actions, onClose = {
-                            table =
-                                null
-                        })
-                    }
-
-                    sitting == DenGame.TEXAS_HOLDEM -> {
-                        PokerScreen(PokerGame.HOLDEM, den, actions, onClose = {
-                            table =
-                                null
-                        })
-                    }
-
-                    else -> {
-                        ThemeShop(den, actions, onClose = { shopping = false })
-                    }
+                    den == null || (sitting == null && !shopping) -> Menu(den, history, actions, room, ways)
+                    sitting == DenGame.ROULETTE -> RouletteScreen(den, room, actions, getUp)
+                    sitting == DenGame.FIVE_CARD_DRAW -> PokerScreen(PokerGame.DRAW, room, den, actions, getUp)
+                    sitting == DenGame.TEXAS_HOLDEM -> PokerScreen(PokerGame.HOLDEM, room, den, actions, getUp)
+                    else -> ThemeShop(den, actions, onClose = { shopping = false })
                 }
             }
         }
     }
 }
 
+/** Where the den's buttons go: out, to a table, to the shop of themes, or into a room. */
+private class DenWays(
+    val onClose: () -> Unit,
+    val onTable: (DenGame) -> Unit,
+    val onShop: () -> Unit,
+    val onRoom: (Room) -> Unit,
+)
+
 /**
- * The den's own screen: the purse and the points to cash in, the tables, and the theme. [onTable] sits down at a
- * table, and [onShop] opens the shop of themes.
+ * The den's own screen in [room]: the purse and the points to cash in, and the tables. On the floor, the way into
+ * the high rollers' room and the theme too.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-@Suppress("LongParameterList") // The den, and where each of its buttons goes.
 private fun Menu(
     den: Den?,
     history: History,
     actions: DenActions,
-    onClose: () -> Unit,
-    onTable: (DenGame) -> Unit,
-    onShop: () -> Unit,
+    room: Room,
+    ways: DenWays,
 ) {
     // The system back button or gesture goes where the Back button does.
-    BackHandler(onBack = onClose)
+    BackHandler(onBack = ways.onClose)
     Column(
         Modifier
             .fillMaxSize()
@@ -123,38 +121,72 @@ private fun Menu(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.widthIn(max = PanelWidth)) {
             Text(
-                Strings.DEN_TITLE,
+                if (room == Room.FLOOR) Strings.DEN_TITLE else Strings.HIGH_ROLLERS,
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onClose) { Text(Strings.BACK) }
+            TextButton(onClick = ways.onClose) { Text(Strings.BACK) }
         }
         Panel { PurseAndPoints(den, history, actions::cashIn) }
-        Panel {
-            Text(Strings.TABLES, style = MaterialTheme.typography.titleMedium)
-            for (game in DenGame.entries) {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(game.label, style = MaterialTheme.typography.bodyLarge)
-                    TextButton(onClick = { onTable(game) }, modifier = Modifier.testTag(tableTag(game))) {
-                        Text(Strings.PLAY)
-                    }
-                }
+        Panel { Tables(room, ways.onTable) }
+        if (room == Room.FLOOR) {
+            Panel { HighRollers(den, onEnter = { ways.onRoom(Room.HIGH_ROLLERS) }) }
+            Panel { Theme(den, ways.onShop) }
+        }
+    }
+}
+
+/** The tables in [room], each with a button to sit down at it. */
+@Composable
+private fun ColumnScope.Tables(
+    room: Room,
+    onTable: (DenGame) -> Unit,
+) {
+    Text(Strings.TABLES, style = MaterialTheme.typography.titleMedium)
+    if (room != Room.FLOOR) Text(Strings.leastBet(room.leastBet), style = MaterialTheme.typography.bodySmall)
+    for (game in DenGame.entries) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(game.label, style = MaterialTheme.typography.bodyLarge)
+            TextButton(onClick = { onTable(game) }, modifier = Modifier.testTag(tableTag(game))) {
+                Text(Strings.PLAY)
             }
         }
-        Panel {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    Strings.themeIs(denTheme(den?.theme ?: Den.HOUSE_THEME).name),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = onShop, modifier = Modifier.testTag(SHOP_TAG)) { Text(Strings.SHOP) }
-            }
-        }
+    }
+}
+
+/** The way into the high rollers' room, open only to a big enough purse. */
+@Composable
+private fun ColumnScope.HighRollers(
+    den: Den?,
+    onEnter: () -> Unit,
+) {
+    val room = Room.HIGH_ROLLERS
+    Text(Strings.HIGH_ROLLERS, style = MaterialTheme.typography.titleMedium)
+    Text(Strings.highRollersText(room.entry, room.leastBet), style = MaterialTheme.typography.bodySmall)
+    Button(
+        onClick = onEnter,
+        enabled = den?.canEnter(room) == true,
+        modifier = Modifier.align(Alignment.End).padding(top = 8.dp).testTag(HIGH_ROLLERS_TAG),
+    ) { Text(Strings.ENTER) }
+}
+
+/** The theme the den is dressed in, and the way to the shop of them. */
+@Composable
+private fun Theme(
+    den: Den?,
+    onShop: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            Strings.themeIs(denTheme(den?.theme ?: Den.HOUSE_THEME).name),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onShop, modifier = Modifier.testTag(SHOP_TAG)) { Text(Strings.SHOP) }
     }
 }
 
@@ -206,6 +238,9 @@ private fun Panel(content: @Composable ColumnScope.() -> Unit) {
 
 /** Tags the button that opens [game]'s table. */
 fun tableTag(game: DenGame) = "table-${game.name.lowercase()}"
+
+/** Tags the button that goes into the high rollers' room. */
+const val HIGH_ROLLERS_TAG = "highRollers"
 
 /** Tags the button that opens the shop of themes. */
 const val SHOP_TAG = "shop"

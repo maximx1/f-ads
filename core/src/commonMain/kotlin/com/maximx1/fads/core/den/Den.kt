@@ -8,7 +8,8 @@ import kotlin.math.max
 /**
  * Everything the player has in the gambler's den: the [purse], how many of the points won at patience have been
  * [cashedIn] for it already, and where things stand at each table: the bets down on the [roulette] layout, and the
- * five-card [draw] and [holdem] tables, once the player has sat down at them. The points still to cash in are
+ * five-card [draw] and [holdem] tables, once the player has sat down at them, and the same three in the
+ * [Room.HIGH_ROLLERS]. The points still to cash in are
  * worked out from the history, so a win counts once however often they are. The den is dressed in [theme], one of
  * the [themes] the player owns, or the house's own, which costs nothing.
  */
@@ -19,6 +20,9 @@ data class Den(
     val roulette: Roulette = Roulette(),
     val draw: PokerTable? = null,
     val holdem: PokerTable? = null,
+    val highRoulette: Roulette = Roulette(),
+    val highDraw: PokerTable? = null,
+    val highHoldem: PokerTable? = null,
     val themes: Set<String> = emptySet(),
     val theme: String = HOUSE_THEME,
 ) {

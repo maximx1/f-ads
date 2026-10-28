@@ -1,14 +1,18 @@
 package com.maximx1.fads.ui.den
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -17,9 +21,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.den.Purse
+import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.ui.Strings
 import com.maximx1.fads.ui.grouped
 
@@ -34,6 +43,65 @@ enum class Coin(
     GOLD(Purse.GOLD, Strings.GOLDS, GoldFace, GoldEdge, GoldShine),
     SILVER(Purse.SILVER, Strings.SILVERS, SilverFace, SilverEdge, Color.White),
     BRONZE(1, Strings.BRONZES, BronzeFace, BronzeEdge, BronzeShine),
+}
+
+/** A chip to bet with: drawn as [coin], worth [worth] bronzes, with [label] on it when the coin alone would not say. */
+class Chip(
+    val coin: Coin,
+    val worth: Long,
+    val label: String? = null,
+)
+
+/** The chips [room]'s tables take, largest first: the coins themselves on the floor, and plaques of thousands above. */
+fun chipsFor(room: Room): List<Chip> =
+    when (room) {
+        Room.FLOOR -> {
+            Coin.entries.map { Chip(it, it.worth) }
+        }
+
+        Room.HIGH_ROLLERS -> {
+            listOf(
+                Chip(Coin.GOLD, HIGH_GOLD, "25K"),
+                Chip(Coin.SILVER, HIGH_SILVER, "5K"),
+                Chip(Coin.BRONZE, HIGH_BRONZE, "1K"),
+            )
+        }
+    }
+
+/** A chip to tap, ringed in white while it is [chosen]; [onClick] chooses it. */
+@Composable
+internal fun ChipButton(
+    chip: Chip,
+    chosen: Boolean,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val measurer = rememberTextMeasurer()
+    Canvas(
+        modifier
+            .then(if (chosen) Modifier.border(3.dp, Color.White, CircleShape) else Modifier)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = description },
+    ) {
+        drawCoin(chip.coin)
+        val label = chip.label ?: return@Canvas
+        val text =
+            measurer.measure(
+                label,
+                TextStyle(
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize =
+                        (
+                            size.minDimension *
+                                LABEL
+                        ).toSp(),
+                ),
+            )
+        drawText(text, topLeft = center - Offset(text.size.width / 2f, text.size.height / 2f))
+    }
 }
 
 /** A coin, lit from the top left, at [centre] and [radius]: unless told otherwise, filling the draw area. */
@@ -101,6 +169,10 @@ private val BronzeFace = Color(0xFFC27C45)
 private val BronzeEdge = Color(0xFF5E3417)
 private val BronzeShine = Color(0xFFF3C79C)
 
+private const val HIGH_GOLD = 25_000L
+private const val HIGH_SILVER = 5_000L
+private const val HIGH_BRONZE = 1_000L
+private const val LABEL = 0.3f
 private const val SHINE_OFFSET = 0.35f
 private const val SHINE_REACH = 1.3f
 private const val FACE = 0.86f

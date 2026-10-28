@@ -128,7 +128,13 @@ internal fun DrawScope.drawChip(
         centre + Offset(radius * SHADOW_OFFSET, radius * SHADOW_OFFSET),
     )
     drawCoin(coin, centre, radius)
-    val text = measurer.measure(stake.toString(), Stake.copy(fontSize = (radius * STAKE_SIZE).toSp()))
+    // Thousands as K, so a high roller's chip still reads at a glance.
+    val written = if (stake >= THOUSAND && stake % THOUSAND == 0L) "${stake / THOUSAND}K" else stake.toString()
+    val text =
+        measurer.measure(
+            written,
+            Stake.copy(fontSize = (radius * STAKE_SIZE / maxOf(1, written.length - 1)).toSp()),
+        )
     drawText(text, topLeft = centre - Offset(text.size.width / 2f, text.size.height / 2f))
 }
 
@@ -146,5 +152,6 @@ private const val DIAMOND = 0.38f
 private const val DIAMOND_WIDTH = 0.6f
 private const val CHIP = 0.34f
 private const val STAKE_SIZE = 0.8f
+private const val THOUSAND = 1_000L
 private const val SHADOW = 0.35f
 private const val SHADOW_OFFSET = 0.12f

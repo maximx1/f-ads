@@ -212,55 +212,68 @@ data class Roulette(
 }
 
 /**
- * This den with [amount] bronzes from the purse put on [bet], on top of anything already on it. Throws
- * [IllegalArgumentException] if the purse does not hold that much, or the amount is below [minimum].
+ * This den with [amount] bronzes from the purse put on [bet] at [room]'s table, on top of anything already on it.
+ * Throws [IllegalArgumentException] if the purse does not hold that much, or the amount is below the room's least
+ * bet.
  */
 fun Den.placeBet(
     bet: Bet,
     amount: Long,
-    minimum: Long = 1,
+    room: Room = Room.FLOOR,
 ): Den {
-    require(amount >= minimum) { "Bets start at $minimum, not $amount" }
-    return copy(purse = purse - amount, roulette = roulette.copy(bets = roulette.bets + (bet to stakeOn(bet) + amount)))
-}
-
-/** This den with every bet taken back off the layout into the purse. */
-fun Den.clearBets(): Den = copy(purse = purse + roulette.staked, roulette = roulette.copy(bets = emptyMap()))
-
-/** True if the last spin's bets can go down again: the layout is bare and the purse holds enough. */
-val Den.canRebet: Boolean get() =
-    roulette.bets.isEmpty() && roulette.lastBets.isNotEmpty() &&
-        purse.holds(roulette.lastBets.values.sum())
-
-/** This den with the last spin's bets put down again. Throws [IllegalArgumentException] unless it [canRebet]. */
-fun Den.rebet(): Den {
-    require(canRebet) { "The last bets cannot go down again" }
-    val stake = roulette.lastBets.values.sum()
-    return copy(purse = purse - stake, roulette = roulette.copy(bets = roulette.lastBets))
-}
-
-/**
- * This den after spin number [number]: the ball lands where [Wheel.landing] says, every winning bet is paid its
- * odds and handed back with them, and the layout is cleared. Throws [IllegalArgumentException] with no bets down.
- */
-fun Den.spin(number: Long): Den {
-    require(roulette.bets.isNotEmpty()) { "Nothing is bet" }
-    val pocket = Wheel.landing(number)
-    val won =
-        roulette.bets.entries.filter { (bet, _) -> bet.wins(pocket) }.sumOf { (bet, stake) ->
-            stake *
-                (bet.pays + 1)
-        }
-    return copy(
-        purse = purse + won,
-        roulette =
-            Roulette(
-                lastBets = roulette.bets,
-                last = Spin(pocket, roulette.staked, won),
-                spins = roulette.spins + 1,
-            ),
+    require(amount >= room.leastBet) { "Bets start at ${room.leastBet}, not $amount" }
+    val table = roulette(room)
+    return copy(purse = purse - amount).withRoulette(
+        room,
+        table.copy(
+            bets =
+                table.bets + (bet to stakeOn(bet, room) + amount),
+        ),
     )
 }
 
-/** The bronzes riding on [bet] now. */
-fun Den.stakeOn(bet: Bet): Long = roulette.bets[bet] ?: 0
+/** This den with every bet at [room]'s table taken back off the layout into the purse. */
+fun Den.clearBets(room: Room = Room.FLOOR): Den {
+    val table = roulette(room)
+    return copy(purse = purse + table.staked).withRoulette(room, table.copy(bets = emptyMap()))
+}
+
+/** True if the last spin's bets at [room]'s table can go down again: the layout is bare and the purse holds enough. */
+fun Den.canRebet(room: Room = Room.FLOOR): Boolean {
+    val table = roulette(room)
+    return table.bets.isEmpty() && table.lastBets.isNotEmpty() && purse.holds(table.lastBets.values.sum())
+}
+
+/** This den with the last spin's bets at [room]'s table put down again. Throws unless it [canRebet]. */
+fun Den.rebet(room: Room = Room.FLOOR): Den {
+    require(canRebet(room)) { "The last bets cannot go down again" }
+    val table = roulette(room)
+    return copy(purse = purse - table.lastBets.values.sum()).withRoulette(room, table.copy(bets = table.lastBets))
+}
+
+/**
+ * This den after spin number [number] at [room]'s table: the ball lands where [Wheel.landing] says, every winning
+ * bet is paid its odds and handed back with them, and the layout is cleared. Throws [IllegalArgumentException]
+ * with no bets down.
+ */
+fun Den.spin(
+    number: Long,
+    room: Room = Room.FLOOR,
+): Den {
+    val table = roulette(room)
+    require(table.bets.isNotEmpty()) { "Nothing is bet" }
+    val pocket = Wheel.landing(number)
+    val won =
+        table.bets.entries
+            .filter { (bet, _) ->
+                bet.wins(pocket)
+            }.sumOf { (bet, stake) -> stake * (bet.pays + 1) }
+    val spun = Roulette(lastBets = table.bets, last = Spin(pocket, table.staked, won), spins = table.spins + 1)
+    return copy(purse = purse + won).withRoulette(room, spun)
+}
+
+/** The bronzes riding on [bet] at [room]'s table now. */
+fun Den.stakeOn(
+    bet: Bet,
+    room: Room = Room.FLOOR,
+): Long = roulette(room).bets[bet] ?: 0
