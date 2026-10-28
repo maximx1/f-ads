@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -84,10 +86,9 @@ internal fun MoneyWheelScreen(
             TextButton(onClick = onClose) { Text(Strings.BACK) }
         }
         PurseCoins(den.purse, coinSize = 20.dp)
-        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Wheel(table, theme, onSettled = {
-                settled = it
-            }, modifier = Modifier.fillMaxSize().aspectRatio(1f, matchHeightConstraintsFirst = true))
+        // As big as fits both ways, so none of the wheel is cut off on a tall screen or a wide one.
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Wheel(table, theme, onSettled = { settled = it }, modifier = Modifier.size(minOf(maxWidth, maxHeight)))
         }
         Text(
             if (spinning ||
