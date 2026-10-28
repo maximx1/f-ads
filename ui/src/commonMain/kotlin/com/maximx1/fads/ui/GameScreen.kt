@@ -299,7 +299,11 @@ private fun <S : Any, M : Any> PlayArea(
             state = state,
             onMove = viewModel::play,
             modifier = Modifier.weight(1f).fillMaxWidth().padding(look.boardPadding),
-            paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent, look.pane) },
+            paint =
+                remember(
+                    cards,
+                    look,
+                ) { BoardPaint(cards, look.slotColor, look.accent, look.pane, look.clock.text) },
             marks = remember(stuck, hint) { TableMarks(stuck, hint) },
         )
         SplitButton(

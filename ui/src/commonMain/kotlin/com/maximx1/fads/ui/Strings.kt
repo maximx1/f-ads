@@ -25,6 +25,9 @@ internal object Strings {
     const val SOLITAIRE = "Solitaire"
     const val SPIDER = "Spider"
     const val MAHJONG = "Mahjong"
+    const val WAR = "War"
+    const val WAR_FIRST_FLIP = "Tap your pile to turn a card"
+    const val WAR_LOST = "The computer has every card"
 
     const val UNDO = "Undo"
     const val AUTO_COMPLETE = "Auto-complete"
@@ -131,6 +134,13 @@ internal object Strings {
     fun suits(count: Int) = if (count == 1) "1 suit" else "$count suits"
 
     fun gameNumber(deal: Long) = "Game #$deal"
+
+    /** Who took the last battle of War, and how many cards were in it. */
+    fun warTaken(
+        youTook: Boolean,
+        cards: Int,
+        wasWar: Boolean,
+    ) = (if (wasWar) "War! " else "") + (if (youTook) "You take $cards" else "The computer takes $cards")
 
     fun moveCount(moves: Int) = "Moves: $moves"
 

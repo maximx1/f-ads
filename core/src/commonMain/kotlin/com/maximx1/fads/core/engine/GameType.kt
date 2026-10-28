@@ -6,6 +6,7 @@ import com.maximx1.fads.core.mahjong.MahjongRules
 import com.maximx1.fads.core.rules.FreeCellRules
 import com.maximx1.fads.core.spider.SpiderRules
 import com.maximx1.fads.core.spider.SpiderState
+import com.maximx1.fads.core.war.WarRules
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -82,12 +83,25 @@ sealed interface GameType {
         override fun load(text: String) = Game.fromJson(MahjongRules, text)
     }
 
+    /** War against the computer, until one side holds every card. */
+    @Serializable
+    @SerialName("war")
+    data object War : GameType {
+        override val key get() = "war"
+        override val rules get() = WarRules
+
+        override fun start(dealNumber: Long) = Game.start(WarRules, dealNumber)
+
+        override fun load(text: String) = Game.fromJson(WarRules, text)
+    }
+
     companion object {
         val all: List<GameType>
             get() =
                 listOf(FreeCell, Klondike(1), Klondike(KlondikeState.DRAW_THREE)) +
                     SpiderState.SUIT_CHOICES.map(::Spider) +
-                    Mahjong
+                    Mahjong +
+                    War
 
         fun fromKey(key: String): GameType? = all.find { it.key == key }
     }

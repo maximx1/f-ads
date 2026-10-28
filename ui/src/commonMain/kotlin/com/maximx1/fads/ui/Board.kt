@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -32,8 +34,10 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.zIndex
@@ -44,19 +48,21 @@ import com.maximx1.fads.core.state.GameState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private typealias CardPosition = Animatable<Offset, AnimationVector2D>
 
 /**
  * How the board is painted: the cards, the outlines of the empty places, and the marks that point out a hint.
  * [pane], if there is one, is painted under all of them, across the whole board, given the board's top row if it
- * has one.
+ * has one. Words on the table are written in [labels].
  */
 class BoardPaint(
     val cards: CardStyle,
     val slots: Color = SlotColor,
     val hint: Color = HintColor,
     val pane: (DrawScope.(Header?) -> Unit)? = null,
+    val labels: TextStyle = LabelStyle,
 )
 
 @Composable
@@ -128,6 +134,7 @@ fun <S : Any, M : Any> CardTable(
         Canvas(Modifier.fillMaxSize()) { drawBareBoard(arrangement, paint) }
         val cardSize = with(density) { DpSize(arrangement.cardSize.width.toDp(), arrangement.cardSize.height.toDp()) }
         TappableSlots(arrangement, cardSize, onMove)
+        for (label in arrangement.labels) TableText(label, paint.labels)
 
         for (placed in arrangement.cards) {
             key(placed.id) {
@@ -193,6 +200,29 @@ private fun <M : Any> TappableSlots(
                 .pointerInput(move) { detectTapGestures { onMove(move) } },
         )
     }
+}
+
+/** [label]'s words, centred on its point. */
+@Composable
+private fun TableText(
+    label: TableLabel,
+    style: TextStyle,
+) {
+    Text(
+        label.text,
+        style = MaterialTheme.typography.titleMedium.merge(style),
+        modifier =
+            Modifier
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(
+                            (label.centre.x - placeable.width / 2f).roundToInt(),
+                            (label.centre.y - placeable.height / 2f).roundToInt(),
+                        )
+                    }
+                }.testTag(label.tag),
+    )
 }
 
 private fun Modifier.gestures(
@@ -328,6 +358,7 @@ private fun DrawScope.drawRecycle(
 
 private val SlotColor = Color(0x40FFFFFF)
 private val HintColor = Color(0xFFFFE082)
+private val LabelStyle = TextStyle(color = Color.White)
 
 // Darkens whatever a card style paints without touching its shape.
 internal val Dimmed = Modifier.graphicsLayer { colorFilter = ColorFilter.lighting(Color(0xFFB4B4B4), Color.Black) }

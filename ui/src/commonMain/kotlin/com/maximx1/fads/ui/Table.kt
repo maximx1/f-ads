@@ -36,6 +36,9 @@ interface Arrangement<M : Any> {
     /** The row along the top of the table, if the game has one, for a theme to set apart. */
     val header: Header? get() = null
 
+    /** Words written on the table, such as how many cards a pile holds. None, unless a game says so. */
+    val labels: List<TableLabel> get() = emptyList()
+
     /** The move a tap on card [id] plays, or `null` if it plays none. */
     fun tap(id: Int): M?
 
@@ -84,6 +87,13 @@ sealed interface SlotMark {
     /** An empty stock that turns the waste back over when tapped. */
     data object Recycle : SlotMark
 }
+
+/** A line of [text] centred on [centre], in pixels, under the cards. [tag] names it to tests. */
+class TableLabel(
+    val text: String,
+    val centre: Offset,
+    val tag: String,
+)
 
 /** The row along the top: where it ends, and the places across it where one group of slots gives way to another. */
 class Header(

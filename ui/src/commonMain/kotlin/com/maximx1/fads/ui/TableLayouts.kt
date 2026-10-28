@@ -21,6 +21,7 @@ internal fun <S : Any, M : Any> tableLayoutFor(rules: Rules<S, M>): TableLayout<
         GameType.FreeCell -> FreeCellLayout
         is GameType.Klondike -> KlondikeLayout
         is GameType.Spider -> SpiderLayout
+        GameType.War -> WarLayout
         GameType.Mahjong -> null
     } as TableLayout<S, M>?
 

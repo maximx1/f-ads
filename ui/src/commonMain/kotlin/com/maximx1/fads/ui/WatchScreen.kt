@@ -123,7 +123,11 @@ private fun <S : Any, M : Any> Replay(
             state = positions[playback.step],
             onMove = {},
             modifier = Modifier.weight(1f).fillMaxWidth().padding(look.boardPadding),
-            paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent, look.pane) },
+            paint =
+                remember(
+                    cards,
+                    look,
+                ) { BoardPaint(cards, look.slotColor, look.accent, look.pane, look.clock.text) },
             playable = false,
         )
         Text(

@@ -1,7 +1,9 @@
 package com.maximx1.fads.ui
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -24,6 +26,10 @@ import com.maximx1.fads.core.spider.SpiderMove
 import com.maximx1.fads.core.spider.SpiderState
 import com.maximx1.fads.core.spider.legalMoves
 import com.maximx1.fads.core.spider.play
+import com.maximx1.fads.core.war.Side
+import com.maximx1.fads.core.war.WarMove
+import com.maximx1.fads.core.war.WarState
+import com.maximx1.fads.core.war.play
 import com.maximx1.fads.game.FileStorage
 import com.maximx1.fads.game.GameStore
 import org.junit.After
@@ -174,6 +180,36 @@ class OtherGamesTest {
         compose.onNodeWithText("Play").performClick()
         compose.waitUntil(TIMEOUT) { settings().gameType == GameType.Mahjong }
         waitForSave(GameType.Mahjong) { it.moveCount == 0 }
+    }
+
+    @Test
+    fun tappingYourWarPileTurnsTheNextCardsOverAndSaysWhoTookThem() {
+        settings().gameType = GameType.War
+        File(files, GameStore.gameFile(GameType.War)).writeText("""{"dealNumber":1}""")
+        launch()
+        compose.onNodeWithTag(WarLayout.OUTCOME_TAG).assertTextEquals("Tap your pile to turn a card")
+        compose.onNodeWithTag(WarLayout.YOUR_COUNT_TAG).assertTextEquals("26")
+
+        val state = GameType.War.start(1).state as WarState
+        compose.onNodeWithTag(state.yours.first().code).performClick()
+        waitForSave(GameType.War) { it.record.moves == listOf<WarMove>(WarMove.Flip) }
+        val after = state.play(WarMove.Flip)
+        compose.onNodeWithTag(WarLayout.YOUR_COUNT_TAG).assertTextEquals("25")
+        compose
+            .onNodeWithTag(WarLayout.OUTCOME_TAG)
+            .assertTextEquals(if (after.battle?.winner == Side.YOU) "You take 2" else "The computer takes 2")
+
+        // Nothing is ever chosen in War, so it can always play itself out.
+        compose.onNodeWithContentDescription("Auto-complete").assertIsEnabled()
+    }
+
+    @Test
+    fun theFirstOpenOffersWarToo() {
+        launch()
+        compose.onNodeWithText("War").performClick()
+        compose.onNodeWithText("Play").performClick()
+        compose.waitUntil(TIMEOUT) { settings().gameType == GameType.War }
+        waitForSave(GameType.War) { it.moveCount == 0 }
     }
 
     private companion object {

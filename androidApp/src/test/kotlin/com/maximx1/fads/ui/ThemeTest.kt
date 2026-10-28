@@ -59,6 +59,10 @@ class ThemeTest(
         val saveFile = File(app.filesDir, GameStore.gameFile(game))
         if (game == GameType.FreeCell) {
             saveFile.writeText("""{"dealNumber":1,"moves":[{"type":"cc","from":0,"to":4}],"elapsedMillis":83000}""")
+        } else if (game == GameType.War) {
+            // Deal 1's 29th battle is a war fought twice over, nine cards a side.
+            val flips = List(WAR_FLIPS) { """{"type":"flip"}""" }.joinToString(",")
+            saveFile.writeText("""{"dealNumber":1,"moves":[$flips],"elapsedMillis":83000}""")
         } else {
             saveFile.writeText("""{"dealNumber":1,"elapsedMillis":83000}""")
         }
@@ -99,10 +103,12 @@ class ThemeTest(
                     GameType.Klondike(3),
                     GameType.Spider(2),
                     GameType.Mahjong,
+                    GameType.War,
                 ).map { arrayOf(theme, it) }
             }
 
         private const val TIMEOUT = 10_000L
+        private const val WAR_FLIPS = 29
         private const val SMOKE_MILLIS = 9_000L
         private const val PNG_QUALITY = 100
         private val grip = Offset(30f, 20f)
