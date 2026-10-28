@@ -1,5 +1,6 @@
 package com.maximx1.fads.ui
 
+import com.maximx1.fads.core.den.BaccaratSide
 import com.maximx1.fads.core.den.BetKind
 import com.maximx1.fads.core.den.BlackjackMove
 import com.maximx1.fads.core.den.HandCategory
@@ -80,6 +81,7 @@ internal object Strings {
     const val PLINKO = "Plinko"
     const val VIDEO_POKER = "Video poker"
     const val BLACKJACK = "Blackjack"
+    const val BACCARAT = "Baccarat"
     const val DEALER = "Dealer"
     const val BLACKJACK_RULES = "Blackjack pays 3 to 2 · Dealer stands on 17"
     const val HELD = "HELD"
@@ -180,6 +182,40 @@ internal object Strings {
     ) = "On each of 5 lines: ${grouped(each)}, ${bronzes(total)} in all"
 
     fun slotResult(won: Long) = if (won > 0) "Won ${bronzes(won)}!" else "No win this time"
+
+    fun baccaratSide(side: BaccaratSide) =
+        when (side) {
+            BaccaratSide.PLAYER -> "Player"
+            BaccaratSide.BANKER -> "Banker"
+            BaccaratSide.TIE -> "Tie"
+        }
+
+    fun baccaratOdds(side: BaccaratSide) =
+        when (side) {
+            BaccaratSide.PLAYER -> "1 to 1"
+            BaccaratSide.BANKER -> "0.95 to 1"
+            BaccaratSide.TIE -> "8 to 1"
+        }
+
+    fun sideTotal(
+        side: String,
+        total: Int,
+    ) = "$side: $total"
+
+    fun coupResult(
+        won: BaccaratSide,
+        player: Int,
+        banker: Int,
+        paid: Long,
+    ): String {
+        val winner =
+            when (won) {
+                BaccaratSide.TIE -> "A tie at $player"
+                BaccaratSide.PLAYER -> "Player wins $player to $banker"
+                BaccaratSide.BANKER -> "Banker wins $banker to $player"
+            }
+        return "$winner · " + if (paid > 0) "paid ${bronzes(paid)}" else "nothing back"
+    }
 
     fun dealerShows(points: Int) = "Dealer shows $points"
 

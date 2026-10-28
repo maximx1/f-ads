@@ -103,6 +103,7 @@ private fun Table(
         DenGame.SLOTS -> SlotsScreen(den, room, actions, onClose)
         DenGame.VIDEO_POKER -> VideoPokerScreen(den, room, actions, onClose)
         DenGame.BLACKJACK -> BlackjackScreen(den, room, actions, onClose)
+        DenGame.BACCARAT -> BaccaratScreen(den, room, actions, onClose)
     }
 }
 

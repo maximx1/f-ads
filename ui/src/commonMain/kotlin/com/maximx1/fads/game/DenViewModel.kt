@@ -2,6 +2,7 @@ package com.maximx1.fads.game
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.maximx1.fads.core.den.BaccaratSide
 import com.maximx1.fads.core.den.Bet
 import com.maximx1.fads.core.den.BlackjackMove
 import com.maximx1.fads.core.den.Den
@@ -9,11 +10,14 @@ import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.PokerMove
 import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.core.den.SlotMachine
+import com.maximx1.fads.core.den.baccarat
+import com.maximx1.fads.core.den.betBaccarat
 import com.maximx1.fads.core.den.blackjack
 import com.maximx1.fads.core.den.botsTurn
 import com.maximx1.fads.core.den.canMove
 import com.maximx1.fads.core.den.canPlayBlackjack
 import com.maximx1.fads.core.den.canRebet
+import com.maximx1.fads.core.den.clearBaccarat
 import com.maximx1.fads.core.den.clearBets
 import com.maximx1.fads.core.den.dealBlackjack
 import com.maximx1.fads.core.den.dealHand
@@ -22,6 +26,7 @@ import com.maximx1.fads.core.den.drawVideoPoker
 import com.maximx1.fads.core.den.dropBall
 import com.maximx1.fads.core.den.leaveTable
 import com.maximx1.fads.core.den.placeBet
+import com.maximx1.fads.core.den.playBaccarat
 import com.maximx1.fads.core.den.playBlackjack
 import com.maximx1.fads.core.den.playBot
 import com.maximx1.fads.core.den.playPoker
@@ -127,6 +132,19 @@ interface DenActions {
         move: BlackjackMove,
         room: Room,
     )
+
+    /** Puts [amount] more bronzes on [side] at [room]'s baccarat table. */
+    fun betBaccarat(
+        side: BaccaratSide,
+        amount: Long,
+        room: Room,
+    )
+
+    /** Takes the bets back off [room]'s baccarat table. */
+    fun clearBaccarat(room: Room)
+
+    /** Deals a coup at [room]'s baccarat table, if anything is bet. */
+    fun playBaccarat(room: Room)
 
     /** Buys the theme saved as [key] and puts it up, if the purse holds its price. */
     fun buyTheme(key: String)
@@ -262,6 +280,19 @@ class DenViewModel(
         move: BlackjackMove,
         room: Room,
     ) = change { if (it.canPlayBlackjack(move, room)) it.playBlackjack(move, room) else it }
+
+    override fun betBaccarat(
+        side: BaccaratSide,
+        amount: Long,
+        room: Room,
+    ) = change { if (amount >= room.leastBet && it.purse.holds(amount)) it.betBaccarat(side, amount, room) else it }
+
+    override fun clearBaccarat(room: Room) = change { it.clearBaccarat(room) }
+
+    override fun playBaccarat(room: Room) =
+        change {
+            if (it.baccarat(room).bets.isEmpty()) it else it.playBaccarat(luck(), room)
+        }
 
     override fun buyTheme(key: String) =
         change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }
