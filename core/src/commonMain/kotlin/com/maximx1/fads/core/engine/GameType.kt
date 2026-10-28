@@ -2,6 +2,7 @@ package com.maximx1.fads.core.engine
 
 import com.maximx1.fads.core.klondike.KlondikeRules
 import com.maximx1.fads.core.klondike.KlondikeState
+import com.maximx1.fads.core.mahjong.MahjongRules
 import com.maximx1.fads.core.rules.FreeCellRules
 import com.maximx1.fads.core.spider.SpiderRules
 import com.maximx1.fads.core.spider.SpiderState
@@ -69,11 +70,24 @@ sealed interface GameType {
         override fun load(text: String) = Game.fromJson(rules, text)
     }
 
+    /** Mahjong solitaire on the turtle: matching pairs of free tiles off the table. */
+    @Serializable
+    @SerialName("mahjong")
+    data object Mahjong : GameType {
+        override val key get() = "mahjong"
+        override val rules get() = MahjongRules
+
+        override fun start(dealNumber: Long) = Game.start(MahjongRules, dealNumber)
+
+        override fun load(text: String) = Game.fromJson(MahjongRules, text)
+    }
+
     companion object {
         val all: List<GameType>
             get() =
                 listOf(FreeCell, Klondike(1), Klondike(KlondikeState.DRAW_THREE)) +
-                    SpiderState.SUIT_CHOICES.map(::Spider)
+                    SpiderState.SUIT_CHOICES.map(::Spider) +
+                    Mahjong
 
         fun fromKey(key: String): GameType? = all.find { it.key == key }
     }

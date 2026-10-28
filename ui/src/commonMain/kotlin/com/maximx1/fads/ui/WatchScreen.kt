@@ -107,7 +107,6 @@ private fun <S : Any, M : Any> Replay(
             playback.step += 1
         }
     }
-    val layout = remember(game.rules) { tableLayoutFor(game.rules) }
     val cards = rememberCardStyle(look::cards)
 
     Column(
@@ -120,9 +119,9 @@ private fun <S : Any, M : Any> Replay(
             modifier = Modifier.padding(vertical = 4.dp),
         )
         Box(Modifier.weight(1f).fillMaxWidth().padding(look.boardPadding)) {
-            CardTable(
+            GameTable(
+                rules = game.rules,
                 state = positions[playback.step],
-                layout = layout,
                 onMove = {},
                 modifier = Modifier.fillMaxSize(),
                 paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent, look.pane) },

@@ -9,6 +9,7 @@ internal object Strings {
     const val FREECELL = "FreeCell"
     const val SOLITAIRE = "Solitaire"
     const val SPIDER = "Spider"
+    const val MAHJONG = "Mahjong"
 
     const val UNDO = "Undo"
     const val AUTO_COMPLETE = "Auto-complete"

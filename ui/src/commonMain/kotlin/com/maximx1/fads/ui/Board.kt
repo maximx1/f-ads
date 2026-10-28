@@ -324,7 +324,7 @@ private val SlotColor = Color(0x40FFFFFF)
 private val HintColor = Color(0xFFFFE082)
 
 // Darkens whatever a card style paints without touching its shape.
-private val Dimmed = Modifier.graphicsLayer { colorFilter = ColorFilter.lighting(Color(0xFFB4B4B4), Color.Black) }
+internal val Dimmed = Modifier.graphicsLayer { colorFilter = ColorFilter.lighting(Color(0xFFB4B4B4), Color.Black) }
 private val MoveSpring = spring<Offset>(stiffness = Spring.StiffnessMediumLow)
 
 private const val SLOT_CORNER = 0.09f

@@ -17,6 +17,9 @@ import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.core.klondike.KlondikeMove
 import com.maximx1.fads.core.klondike.KlondikeState
+import com.maximx1.fads.core.mahjong.MahjongMove
+import com.maximx1.fads.core.mahjong.MahjongState
+import com.maximx1.fads.core.mahjong.legalMoves
 import com.maximx1.fads.core.spider.SpiderMove
 import com.maximx1.fads.core.spider.SpiderState
 import com.maximx1.fads.core.spider.legalMoves
@@ -139,6 +142,38 @@ class OtherGamesTest {
             up()
         }
         waitForSave(oneSuit) { it.record.moves.lastOrNull() == move }
+    }
+
+    @Test
+    fun mahjongTakesOffAPairTappedOneTileAfterTheOther() {
+        settings().gameType = GameType.Mahjong
+        File(files, GameStore.gameFile(GameType.Mahjong)).writeText("""{"dealNumber":1}""")
+        launch()
+
+        val state = GameType.Mahjong.start(1).state as MahjongState
+
+        fun tap(id: Int) = compose.onNodeWithTag(MahjongTiles.tagOf(state.tiles[id])).performClick()
+
+        // A tile under others does nothing; a free one is picked, and tapping it again lets it go.
+        val move = state.legalMoves().first()
+        val blocked = state.tiles.first { it.id !in state.free }
+        tap(blocked.id)
+        tap(move.first)
+        tap(move.first)
+        tap(blocked.id)
+        // Now the pair: the first tile, then its match.
+        tap(move.first)
+        tap(move.second)
+        waitForSave(GameType.Mahjong) { it.record.moves == listOf<MahjongMove>(move) }
+    }
+
+    @Test
+    fun theFirstOpenOffersMahjongToo() {
+        launch()
+        compose.onNodeWithText("Mahjong").performClick()
+        compose.onNodeWithText("Play").performClick()
+        compose.waitUntil(TIMEOUT) { settings().gameType == GameType.Mahjong }
+        waitForSave(GameType.Mahjong) { it.moveCount == 0 }
     }
 
     private companion object {

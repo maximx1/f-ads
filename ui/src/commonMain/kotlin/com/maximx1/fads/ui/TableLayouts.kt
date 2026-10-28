@@ -1,13 +1,53 @@
 package com.maximx1.fads.ui
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.core.engine.Rules
+import com.maximx1.fads.core.mahjong.MahjongMove
+import com.maximx1.fads.core.mahjong.MahjongState
 
-/** The table for the game [rules] play. Each type's layout is written for its own rules, so the cast holds. */
+/**
+ * The card table for the game [rules] play, or `null` for mahjong, which is played with tiles on a [MahjongTable].
+ * Each type's layout is written for its own rules, so the cast holds.
+ */
 @Suppress("UNCHECKED_CAST")
-internal fun <S : Any, M : Any> tableLayoutFor(rules: Rules<S, M>): TableLayout<S, M> =
+internal fun <S : Any, M : Any> tableLayoutFor(rules: Rules<S, M>): TableLayout<S, M>? =
     when (rules.type) {
         GameType.FreeCell -> FreeCellLayout
         is GameType.Klondike -> KlondikeLayout
         is GameType.Spider -> SpiderLayout
-    } as TableLayout<S, M>
+        GameType.Mahjong -> null
+    } as TableLayout<S, M>?
+
+/** Whatever game [rules] play, on its table: tiles for mahjong, and cards laid out by the game for the rest. */
+@Composable
+@Suppress("UNCHECKED_CAST", "LongParameterList") // A mahjong game's state and moves are mahjong's.
+internal fun <S : Any, M : Any> GameTable(
+    rules: Rules<S, M>,
+    state: S,
+    onMove: (M) -> Unit,
+    modifier: Modifier = Modifier,
+    paint: BoardPaint = rememberPlainBoardPaint(),
+    marks: TableMarks<M> = TableMarks(),
+) {
+    val layout = remember(rules) { tableLayoutFor(rules) }
+    if (layout != null) {
+        CardTable(state, layout, onMove, modifier, paint, marks)
+    } else {
+        MahjongTable(
+            state as MahjongState,
+            onMove as (MahjongMove) -> Unit,
+            modifier,
+            paint,
+            marks as TableMarks<MahjongMove>,
+        )
+    }
+}
+
+/** The cards or tiles on [state]'s table that no legal move would move right now, by id. */
+internal fun <S : Any, M : Any> stuckOn(
+    rules: Rules<S, M>,
+    state: S,
+): Set<Int> = tableLayoutFor(rules)?.stuck(state) ?: MahjongTiles.stuck(state as MahjongState)

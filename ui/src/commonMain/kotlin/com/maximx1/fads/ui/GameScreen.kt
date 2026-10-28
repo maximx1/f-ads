@@ -216,7 +216,6 @@ private fun <S : Any, M : Any> PlayArea(
 ) {
     val look = settings.theme.look
     val state = game.state
-    val layout = remember(game.rules) { tableLayoutFor(game.rules) }
     val suggestion = remember(state, game.moveCount) { game.hint() }
     val finishable = remember(state) { game.canAutoComplete }
     // The position a hint was asked for. The hint shows only while that is still the position on the table.
@@ -228,7 +227,7 @@ private fun <S : Any, M : Any> PlayArea(
         }
     }
     val dim = settings.dimsStuckCards
-    val stuck = remember(state, dim) { if (dim) layout.stuck(state) else emptySet() }
+    val stuck = remember(state, dim) { if (dim) stuckOn(game.rules, state) else emptySet() }
     val hint = suggestion.takeIf { hintFor === state }
     val cards = rememberCardStyle(look::cards)
 
@@ -239,9 +238,9 @@ private fun <S : Any, M : Any> PlayArea(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TopRow(elapsedSeconds, game.score, game.movesMade, look.clock)
-        CardTable(
+        GameTable(
+            rules = game.rules,
             state = state,
-            layout = layout,
             onMove = viewModel::play,
             modifier = Modifier.weight(1f).fillMaxWidth().padding(look.boardPadding),
             paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent, look.pane) },

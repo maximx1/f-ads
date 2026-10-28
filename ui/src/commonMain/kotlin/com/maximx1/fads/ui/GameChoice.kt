@@ -27,12 +27,13 @@ internal fun gameName(type: GameType): String =
         GameType.FreeCell -> Strings.FREECELL
         is GameType.Klondike -> Strings.SOLITAIRE
         is GameType.Spider -> Strings.SPIDER
+        GameType.Mahjong -> Strings.MAHJONG
     }
 
 /** The option [type] is played with, or `null` for a game that has none. */
 internal fun optionName(type: GameType): String? =
     when (type) {
-        GameType.FreeCell -> null
+        GameType.FreeCell, GameType.Mahjong -> null
         is GameType.Klondike -> Strings.draw(type.draw)
         is GameType.Spider -> Strings.suits(type.suits)
     }
