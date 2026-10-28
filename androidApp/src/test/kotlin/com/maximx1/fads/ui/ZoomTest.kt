@@ -89,10 +89,11 @@ class ZoomTest {
         from: Offset,
         to: Offset,
         holdMillis: Long = 0,
+        steps: Int = DRAG_STEPS,
     ) {
         compose.onRoot().performTouchInput {
             down(from)
-            repeat(DRAG_STEPS) { moveBy((to - from) / DRAG_STEPS.toFloat()) }
+            repeat(steps) { moveBy((to - from) / steps.toFloat()) }
             advanceEventTime(holdMillis)
             up()
         }
@@ -135,6 +136,7 @@ class ZoomTest {
     private fun panAcross(
         by: Float,
         holdMillis: Long = 0,
+        steps: Int = DRAG_STEPS,
     ): Float {
         show()
         pinch(from = 400f, to = 600f, x = 0f)
@@ -142,7 +144,7 @@ class ZoomTest {
         val card = state.columns[3].last().code
         val before = bounds(card)
         val bare = bareBelow(before)
-        drag(bare, bare + Offset(by, 0f), holdMillis)
+        drag(bare, bare + Offset(by, 0f), holdMillis, steps)
         assertEquals(emptyList<Move>(), moves)
         return bounds(card).left - before.left
     }
@@ -151,6 +153,13 @@ class ZoomTest {
     fun zoomedInOneFingerOnTheBareTablePansAndStaysWhereItStops() {
         val shift = panAcross(-300f, holdMillis = 200)
         assertTrue("moved $shift", shift < -200f && shift >= -300f)
+    }
+
+    @Test
+    fun aQuickShortFlickOnlyNudgesTheTableOn() {
+        // Fast enough to glide on to the edge, some 600 pixels, were it not so short.
+        val shift = panAcross(-120f, steps = 4)
+        assertTrue("moved $shift", shift < -120f && shift > -450f)
     }
 
     @Test
