@@ -175,7 +175,7 @@ private fun Den(
 ) {
     val saved by den.den.collectAsStateWithLifecycle()
     val history by viewModel.history.collectAsStateWithLifecycle()
-    DenScreen(saved, history, onCashIn = den::cashIn, onClose = onClose)
+    DenScreen(saved, history, den, onClose = onClose)
 }
 
 /** Whichever dialog [prompt] calls for over the table, or the win when the game has just been won. */

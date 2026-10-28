@@ -16,11 +16,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -37,48 +39,80 @@ import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.den.Purse
 import com.maximx1.fads.core.engine.History
+import com.maximx1.fads.game.DenActions
 import com.maximx1.fads.ui.Strings
 
 /**
  * The gambler's den: the player's purse, the points won at patience waiting to be cashed in for coins, and the
- * tables to play at. [den] is `null` while it is read. [history] holds the games that earned the points.
+ * tables to play at, which open over it. [den] is `null` while it is read. [history] holds the games that earned
+ * the points.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun DenScreen(
     den: Den?,
     history: History,
-    onCashIn: () -> Unit,
+    actions: DenActions,
     onClose: () -> Unit,
 ) {
+    var table by rememberSaveable { mutableStateOf<DenGame?>(null) }
+    if (table == DenGame.ROULETTE && den != null) {
+        RouletteScreen(den, actions, onClose = { table = null })
+        return
+    }
+
     // The system back button or gesture goes where the Back button does.
     BackHandler(onBack = onClose)
     Box(Modifier.fillMaxSize().drawBehind { drawRect(Felt) }) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Gutter),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.widthIn(max = PanelWidth)) {
-                Text(
-                    Strings.DEN_TITLE,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = onClose) { Text(Strings.BACK) }
+        CompositionLocalProvider(LocalContentColor provides Color.White) {
+            Menu(den, history, actions, onClose) {
+                table =
+                    it
             }
-            Panel { PurseAndPoints(den, history, onCashIn) }
-            Panel {
-                Text(Strings.TABLES, style = MaterialTheme.typography.titleMedium)
-                for (game in DenGame.entries) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(top = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(game.label, style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+/** The den's own screen: the purse and the points to cash in, and the tables. [onTable] sits down at one. */
+@Composable
+private fun Menu(
+    den: Den?,
+    history: History,
+    actions: DenActions,
+    onClose: () -> Unit,
+    onTable: (DenGame) -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = Gutter),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.widthIn(max = PanelWidth)) {
+            Text(
+                Strings.DEN_TITLE,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onClose) { Text(Strings.BACK) }
+        }
+        Panel { PurseAndPoints(den, history, actions::cashIn) }
+        Panel {
+            Text(Strings.TABLES, style = MaterialTheme.typography.titleMedium)
+            for (game in DenGame.entries) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(game.label, style = MaterialTheme.typography.bodyLarge)
+                    if (game == DenGame.ROULETTE) {
+                        TextButton(onClick = { onTable(game) }, modifier = Modifier.testTag(tableTag(game))) {
+                            Text(Strings.PLAY)
+                        }
+                    } else {
                         Text(Strings.OPENING_SOON, style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -132,6 +166,9 @@ private fun Panel(content: @Composable ColumnScope.() -> Unit) {
         Column(Modifier.padding(Gutter), content = content)
     }
 }
+
+/** Tags the button that opens [game]'s table. */
+fun tableTag(game: DenGame) = "table-${game.name.lowercase()}"
 
 /** Tags the line that says how many points are waiting to be cashed in. */
 const val POINTS_TAG = "denPoints"

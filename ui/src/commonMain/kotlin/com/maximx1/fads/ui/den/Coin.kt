@@ -36,16 +36,20 @@ enum class Coin(
     BRONZE(1, Strings.BRONZES, BronzeFace, BronzeEdge, BronzeShine),
 }
 
-/** A coin, lit from the top left, filling the smaller side of the draw area. */
-internal fun DrawScope.drawCoin(coin: Coin) {
-    val radius = size.minDimension / 2
-    val shine = center - Offset(radius * SHINE_OFFSET, radius * SHINE_OFFSET)
-    drawCircle(coin.edge, radius)
+/** A coin, lit from the top left, at [centre] and [radius]: unless told otherwise, filling the draw area. */
+internal fun DrawScope.drawCoin(
+    coin: Coin,
+    centre: Offset = center,
+    radius: Float = size.minDimension / 2,
+) {
+    val shine = centre - Offset(radius * SHINE_OFFSET, radius * SHINE_OFFSET)
+    drawCircle(coin.edge, radius, centre)
     drawCircle(
         Brush.radialGradient(listOf(coin.shine, coin.face), shine, radius * SHINE_REACH),
         radius * FACE,
+        centre,
     )
-    drawCircle(coin.edge.copy(alpha = RING_ALPHA), radius * RING, style = Stroke(radius * RING_LINE))
+    drawCircle(coin.edge.copy(alpha = RING_ALPHA), radius * RING, centre, style = Stroke(radius * RING_LINE))
 }
 
 /** How many of each coin [purse] counts out to, as a coin and its count for each. */

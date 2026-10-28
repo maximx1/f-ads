@@ -1,5 +1,7 @@
 package com.maximx1.fads.ui
 
+import com.maximx1.fads.core.den.BetKind
+
 /** Every piece of text the game shows, in one place so that it can be translated one day. */
 @Suppress("TooManyFunctions") // One for each piece of text with a number or a name in it.
 internal object Strings {
@@ -69,6 +71,13 @@ internal object Strings {
     const val TEXAS_HOLDEM = "Texas Hold'em"
     const val ROULETTE = "Roulette"
     const val OPENING_SOON = "Opening soon"
+    const val SPIN = "Spin"
+    const val CLEAR = "Clear"
+    const val REBET = "Rebet"
+    const val COLUMN_BET = "2:1"
+    const val RED = "Red"
+    const val BLACK = "Black"
+    const val GREEN = "Green"
     const val GOLDS = "Golds"
     const val SILVERS = "Silvers"
     const val BRONZES = "Bronzes"
@@ -126,6 +135,28 @@ internal object Strings {
         points: Long,
         bronzes: Long,
     ) = "Trade ${grouped(points)} points for ${bronzes(bronzes)}?"
+
+    fun staked(bronzes: Long) = "On the table: ${bronzes(bronzes)}"
+
+    fun betIn(coins: String) = "Bet in ${coins.lowercase()}"
+
+    fun landed(
+        pocket: Int,
+        colour: String,
+        won: Long,
+    ) = "$pocket $colour: " + if (won > 0) "won ${bronzes(won)}" else "no win"
+
+    fun dozen(index: Int) = listOf("1st 12", "2nd 12", "3rd 12")[index]
+
+    /** What an even-money bet says on the layout, or `null` for red and black, which are shown by their colour. */
+    fun evenMoney(kind: BetKind): String? =
+        when (kind) {
+            BetKind.LOW -> "1–18"
+            BetKind.HIGH -> "19–36"
+            BetKind.EVEN -> "Even"
+            BetKind.ODD -> "Odd"
+            else -> null
+        }
 
     fun restartText(deal: Long) = "Your moves on deal #$deal will be cleared."
 

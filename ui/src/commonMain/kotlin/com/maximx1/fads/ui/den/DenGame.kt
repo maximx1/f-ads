@@ -3,7 +3,7 @@ package com.maximx1.fads.ui.den
 import com.maximx1.fads.ui.Strings
 
 /** The games played in the den. */
-internal enum class DenGame(
+enum class DenGame(
     val label: String,
 ) {
     FIVE_CARD_DRAW(Strings.FIVE_CARD_DRAW),
