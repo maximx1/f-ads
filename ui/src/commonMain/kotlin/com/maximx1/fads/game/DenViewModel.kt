@@ -3,21 +3,26 @@ package com.maximx1.fads.game
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.maximx1.fads.core.den.Bet
+import com.maximx1.fads.core.den.BlackjackMove
 import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.PokerMove
 import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.core.den.SlotMachine
+import com.maximx1.fads.core.den.blackjack
 import com.maximx1.fads.core.den.botsTurn
 import com.maximx1.fads.core.den.canMove
+import com.maximx1.fads.core.den.canPlayBlackjack
 import com.maximx1.fads.core.den.canRebet
 import com.maximx1.fads.core.den.clearBets
+import com.maximx1.fads.core.den.dealBlackjack
 import com.maximx1.fads.core.den.dealHand
 import com.maximx1.fads.core.den.dealVideoPoker
 import com.maximx1.fads.core.den.drawVideoPoker
 import com.maximx1.fads.core.den.dropBall
 import com.maximx1.fads.core.den.leaveTable
 import com.maximx1.fads.core.den.placeBet
+import com.maximx1.fads.core.den.playBlackjack
 import com.maximx1.fads.core.den.playBot
 import com.maximx1.fads.core.den.playPoker
 import com.maximx1.fads.core.den.playersTurn
@@ -108,6 +113,18 @@ interface DenActions {
     /** Draws at [room]'s video poker machine, keeping the cards [held]. */
     fun drawVideoPoker(
         held: Set<Int>,
+        room: Room,
+    )
+
+    /** Deals a round at [room]'s blackjack table for [bet] bronzes, if none is being played. */
+    fun dealBlackjack(
+        bet: Long,
+        room: Room,
+    )
+
+    /** Makes [move] with the hand being played at [room]'s blackjack table, if it can be made. */
+    fun playBlackjack(
+        move: BlackjackMove,
         room: Room,
     )
 
@@ -232,6 +249,19 @@ class DenViewModel(
         held: Set<Int>,
         room: Room,
     ) = change { if (it.videoPoker(room).dealt) it.drawVideoPoker(held, room) else it }
+
+    override fun dealBlackjack(
+        bet: Long,
+        room: Room,
+    ) = change {
+        val ready = !it.blackjack(room).playing && bet >= room.leastBet && it.purse.holds(bet)
+        if (ready) it.dealBlackjack(bet, luck(), room) else it
+    }
+
+    override fun playBlackjack(
+        move: BlackjackMove,
+        room: Room,
+    ) = change { if (it.canPlayBlackjack(move, room)) it.playBlackjack(move, room) else it }
 
     override fun buyTheme(key: String) =
         change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }

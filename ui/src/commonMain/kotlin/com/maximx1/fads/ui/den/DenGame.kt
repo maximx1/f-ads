@@ -12,4 +12,5 @@ enum class DenGame(
     PLINKO(Strings.PLINKO),
     SLOTS(Strings.SLOTS),
     VIDEO_POKER(Strings.VIDEO_POKER),
+    BLACKJACK(Strings.BLACKJACK),
 }

@@ -75,19 +75,34 @@ internal fun DenScreen(
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = theme.accent)) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             Box(Modifier.fillMaxSize().drawBehind { drawFelt(theme) }) {
-                val sitting = if (den == null) null else table
+                val sitting = table
                 when {
                     den == null || (sitting == null && !shopping) -> Menu(den, history, actions, room, ways)
-                    sitting == DenGame.ROULETTE -> RouletteScreen(den, room, actions, getUp)
-                    sitting == DenGame.PLINKO -> PlinkoScreen(den, room, actions, getUp)
-                    sitting == DenGame.SLOTS -> SlotsScreen(den, room, actions, getUp)
-                    sitting == DenGame.VIDEO_POKER -> VideoPokerScreen(den, room, actions, getUp)
-                    sitting == DenGame.FIVE_CARD_DRAW -> PokerScreen(PokerGame.DRAW, room, den, actions, getUp)
-                    sitting == DenGame.TEXAS_HOLDEM -> PokerScreen(PokerGame.HOLDEM, room, den, actions, getUp)
+                    sitting != null -> Table(sitting, den, room, actions, getUp)
                     else -> ThemeShop(den, actions, onClose = { shopping = false })
                 }
             }
         }
+    }
+}
+
+/** [game]'s table in [room]; [onClose] gets up from it. */
+@Composable
+private fun Table(
+    game: DenGame,
+    den: Den,
+    room: Room,
+    actions: DenActions,
+    onClose: () -> Unit,
+) {
+    when (game) {
+        DenGame.FIVE_CARD_DRAW -> PokerScreen(PokerGame.DRAW, room, den, actions, onClose)
+        DenGame.TEXAS_HOLDEM -> PokerScreen(PokerGame.HOLDEM, room, den, actions, onClose)
+        DenGame.ROULETTE -> RouletteScreen(den, room, actions, onClose)
+        DenGame.PLINKO -> PlinkoScreen(den, room, actions, onClose)
+        DenGame.SLOTS -> SlotsScreen(den, room, actions, onClose)
+        DenGame.VIDEO_POKER -> VideoPokerScreen(den, room, actions, onClose)
+        DenGame.BLACKJACK -> BlackjackScreen(den, room, actions, onClose)
     }
 }
 

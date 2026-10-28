@@ -1,7 +1,9 @@
 package com.maximx1.fads.ui
 
 import com.maximx1.fads.core.den.BetKind
+import com.maximx1.fads.core.den.BlackjackMove
 import com.maximx1.fads.core.den.HandCategory
+import com.maximx1.fads.core.den.HandResult
 import com.maximx1.fads.core.den.Outcome
 import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.Room
@@ -77,6 +79,9 @@ internal object Strings {
     const val ROULETTE = "Roulette"
     const val PLINKO = "Plinko"
     const val VIDEO_POKER = "Video poker"
+    const val BLACKJACK = "Blackjack"
+    const val DEALER = "Dealer"
+    const val BLACKJACK_RULES = "Blackjack pays 3 to 2 · Dealer stands on 17"
     const val HELD = "HELD"
     const val DRAW = "Draw"
     const val SLOTS = "Slot machine"
@@ -175,6 +180,38 @@ internal object Strings {
     ) = "On each of 5 lines: ${grouped(each)}, ${bronzes(total)} in all"
 
     fun slotResult(won: Long) = if (won > 0) "Won ${bronzes(won)}!" else "No win this time"
+
+    fun dealerShows(points: Int) = "Dealer shows $points"
+
+    fun dealerHas(points: Int) = if (points > TWENTY_ONE) "Dealer busts with $points" else "Dealer has $points"
+
+    /** A hand's total and bet, and once the round is over how it came out. */
+    fun blackjackHand(
+        points: Int,
+        bet: Long,
+        result: HandResult?,
+    ): String {
+        val total = if (points > TWENTY_ONE) "Bust, $points" else "$points"
+        val outcome =
+            when (result) {
+                null -> ""
+                HandResult.BLACKJACK -> " · Blackjack!"
+                HandResult.WIN -> " · Win"
+                HandResult.PUSH -> " · Push"
+                HandResult.LOSE -> " · Lose"
+            }
+        return "$total on ${grouped(bet)}$outcome"
+    }
+
+    fun blackjackMove(move: BlackjackMove) =
+        when (move) {
+            BlackjackMove.HIT -> "Hit"
+            BlackjackMove.STAND -> "Stand"
+            BlackjackMove.DOUBLE -> "Double"
+            BlackjackMove.SPLIT -> "Split"
+        }
+
+    fun blackjackWon(won: Long) = if (won > 0) "Paid ${bronzes(won)}" else "The house wins this one"
 
     fun paidFor(
         hand: String,
@@ -317,6 +354,7 @@ internal fun clockTextOfMillis(millis: Long): String = clockText(millis / MILLIS
 
 private const val MILLIS_IN_SECOND = 1000
 private const val DIGITS_IN_GROUP = 3
+private const val TWENTY_ONE = 21
 private const val SECONDS_IN_MINUTE = 60
 private const val MINUTES_IN_HOUR = 60
 private const val SECONDS_IN_HOUR = 3600
