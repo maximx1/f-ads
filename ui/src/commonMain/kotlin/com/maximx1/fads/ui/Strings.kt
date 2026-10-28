@@ -13,6 +13,7 @@ import com.maximx1.fads.core.den.Said
 import com.maximx1.fads.core.den.SicBoBet
 import com.maximx1.fads.core.den.SicBoKind
 import com.maximx1.fads.core.den.SymbolDiceGame
+import com.maximx1.fads.core.den.WheelSymbol
 
 /** Every piece of text the game shows, in one place so that it can be translated one day. */
 @Suppress("TooManyFunctions") // One for each piece of text with a number or a name in it.
@@ -89,6 +90,7 @@ internal object Strings {
     const val CRAPS = "Craps"
     const val SIC_BO = "Sic bo"
     const val CHUCK_A_LUCK = "Chuck-a-luck"
+    const val MONEY_WHEEL = "Money wheel"
     const val CROWN_AND_ANCHOR = "Crown and anchor"
     const val SYMBOL_ODDS = "1 to 1 a die"
     const val ROLL = "Roll"
@@ -194,6 +196,20 @@ internal object Strings {
     ) = "On each of 5 lines: ${grouped(each)}, ${bronzes(total)} in all"
 
     fun slotResult(won: Long) = if (won > 0) "Won ${bronzes(won)}!" else "No win this time"
+
+    fun wheelSymbol(symbol: WheelSymbol) =
+        when (symbol) {
+            WheelSymbol.JOKER -> "Joker"
+            WheelSymbol.LOGO -> "Logo"
+            else -> symbol.pays.toString()
+        }
+
+    fun wheelOdds(symbol: WheelSymbol) = "${symbol.pays} to 1"
+
+    fun wheelResult(
+        symbol: String,
+        paid: Long,
+    ) = "Stopped on $symbol · " + if (paid > 0) "paid ${bronzes(paid)}" else "nothing back"
 
     fun symbolDiceName(game: SymbolDiceGame) =
         if (game ==

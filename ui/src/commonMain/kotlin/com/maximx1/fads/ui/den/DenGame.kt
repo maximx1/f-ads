@@ -18,4 +18,5 @@ enum class DenGame(
     SIC_BO(Strings.SIC_BO),
     CHUCK_A_LUCK(Strings.CHUCK_A_LUCK),
     CROWN_AND_ANCHOR(Strings.CROWN_AND_ANCHOR),
+    MONEY_WHEEL(Strings.MONEY_WHEEL),
 }

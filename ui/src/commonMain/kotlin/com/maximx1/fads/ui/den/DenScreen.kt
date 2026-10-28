@@ -109,6 +109,7 @@ private fun Table(
         DenGame.SIC_BO -> SicBoScreen(den, room, actions, onClose)
         DenGame.CHUCK_A_LUCK -> SymbolDiceScreen(SymbolDiceGame.CHUCK_A_LUCK, den, room, actions, onClose)
         DenGame.CROWN_AND_ANCHOR -> SymbolDiceScreen(SymbolDiceGame.CROWN_AND_ANCHOR, den, room, actions, onClose)
+        DenGame.MONEY_WHEEL -> MoneyWheelScreen(den, room, actions, onClose)
     }
 }
 

@@ -13,9 +13,11 @@ import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.core.den.SicBoBet
 import com.maximx1.fads.core.den.SlotMachine
 import com.maximx1.fads.core.den.SymbolDiceGame
+import com.maximx1.fads.core.den.WheelSymbol
 import com.maximx1.fads.core.den.baccarat
 import com.maximx1.fads.core.den.betBaccarat
 import com.maximx1.fads.core.den.betCraps
+import com.maximx1.fads.core.den.betMoneyWheel
 import com.maximx1.fads.core.den.betSicBo
 import com.maximx1.fads.core.den.betSymbolDice
 import com.maximx1.fads.core.den.blackjack
@@ -27,6 +29,7 @@ import com.maximx1.fads.core.den.canRebet
 import com.maximx1.fads.core.den.clearBaccarat
 import com.maximx1.fads.core.den.clearBets
 import com.maximx1.fads.core.den.clearCraps
+import com.maximx1.fads.core.den.clearMoneyWheel
 import com.maximx1.fads.core.den.clearSicBo
 import com.maximx1.fads.core.den.clearSymbolDice
 import com.maximx1.fads.core.den.craps
@@ -36,6 +39,7 @@ import com.maximx1.fads.core.den.dealVideoPoker
 import com.maximx1.fads.core.den.drawVideoPoker
 import com.maximx1.fads.core.den.dropBall
 import com.maximx1.fads.core.den.leaveTable
+import com.maximx1.fads.core.den.moneyWheel
 import com.maximx1.fads.core.den.placeBet
 import com.maximx1.fads.core.den.playBaccarat
 import com.maximx1.fads.core.den.playBlackjack
@@ -51,6 +55,7 @@ import com.maximx1.fads.core.den.roulette
 import com.maximx1.fads.core.den.sicBo
 import com.maximx1.fads.core.den.sitDown
 import com.maximx1.fads.core.den.spin
+import com.maximx1.fads.core.den.spinMoneyWheel
 import com.maximx1.fads.core.den.symbolDice
 import com.maximx1.fads.core.den.table
 import com.maximx1.fads.core.den.videoPoker
@@ -207,6 +212,19 @@ interface DenActions {
         game: SymbolDiceGame,
         room: Room,
     )
+
+    /** Puts [amount] more bronzes on [symbol] at [room]'s money wheel. */
+    fun betMoneyWheel(
+        symbol: WheelSymbol,
+        amount: Long,
+        room: Room,
+    )
+
+    /** Takes the bets back off [room]'s money wheel. */
+    fun clearMoneyWheel(room: Room)
+
+    /** Spins [room]'s money wheel, if anything is bet. */
+    fun spinMoneyWheel(room: Room)
 
     /** Buys the theme saved as [key] and puts it up, if the purse holds its price. */
     fun buyTheme(key: String)
@@ -404,6 +422,19 @@ class DenViewModel(
         game: SymbolDiceGame,
         room: Room,
     ) = change { if (it.symbolDice(game, room).bets.isEmpty()) it else it.rollSymbolDice(game, luck(), room) }
+
+    override fun betMoneyWheel(
+        symbol: WheelSymbol,
+        amount: Long,
+        room: Room,
+    ) = change { if (amount >= room.leastBet && it.purse.holds(amount)) it.betMoneyWheel(symbol, amount, room) else it }
+
+    override fun clearMoneyWheel(room: Room) = change { it.clearMoneyWheel(room) }
+
+    override fun spinMoneyWheel(room: Room) =
+        change {
+            if (it.moneyWheel(room).bets.isEmpty()) it else it.spinMoneyWheel(luck(), room)
+        }
 
     override fun buyTheme(key: String) =
         change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }

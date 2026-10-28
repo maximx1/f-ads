@@ -32,6 +32,7 @@ data class Den(
     val sicBoTables: Map<Room, SicBo> = emptyMap(),
     val chuckALuckTables: Map<Room, SymbolDice> = emptyMap(),
     val crownAndAnchorTables: Map<Room, SymbolDice> = emptyMap(),
+    val moneyWheels: Map<Room, MoneyWheelTable> = emptyMap(),
     val themes: Set<String> = emptySet(),
     val theme: String = HOUSE_THEME,
 ) {
