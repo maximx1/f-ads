@@ -84,7 +84,8 @@ internal fun RouletteScreen(
     val purse = if (spinning && last != null) Purse(den.purse.total - last.won) else den.purse
 
     BackHandler(onBack = onClose)
-    Box(Modifier.fillMaxSize().drawBehind { drawRect(TableFelt) }) {
+    val theme = denTheme(den.theme)
+    Box(Modifier.fillMaxSize().drawBehind { drawFelt(theme) }) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             Table(den, actions, coin, spinning, purse, onCoin = { coin = it }, onSettled = { settled = it }, onClose)
         }
@@ -227,6 +228,5 @@ const val RESULT_TAG = "rouletteResult"
 /** Tags the coin to bet with of each kind. */
 fun chipTag(coin: Coin) = "chip-${coin.name.lowercase()}"
 
-private val TableFelt = Color(0xFF14532D)
 private val WheelSize = 180.dp
 private val ChipSize = 40.dp

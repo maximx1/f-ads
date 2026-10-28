@@ -81,6 +81,11 @@ internal object Strings {
     const val RED = "Red"
     const val BLACK = "Black"
     const val GREEN = "Green"
+    const val THEMES = "Themes"
+    const val SHOP = "Shop"
+    const val BUY = "Buy"
+    const val IN_USE = "In use"
+    const val OWNED = "Owned"
     const val YOU = "You"
     const val FOLD = "Fold"
     const val CHECK = "Check"
@@ -166,6 +171,15 @@ internal object Strings {
             BetKind.ODD -> "Odd"
             else -> null
         }
+
+    fun buyText(
+        theme: String,
+        price: Long,
+    ) = "Buy $theme for ${bronzes(price)}?"
+
+    fun shortBy(bronzes: Long) = "You need ${bronzes(bronzes)} more."
+
+    fun themeIs(name: String) = "Theme: $name"
 
     fun pokerName(game: PokerGame) = if (game == PokerGame.DRAW) FIVE_CARD_DRAW else TEXAS_HOLDEM
 

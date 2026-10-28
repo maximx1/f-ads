@@ -71,6 +71,24 @@ class DenTest {
     }
 
     @Test
+    fun themesAreBoughtWithBronzesAndPutUp() {
+        val den = Den(purse = Purse(1_500))
+        assertEquals(Den.HOUSE_THEME, den.theme)
+        assertTrue(den.owns(Den.HOUSE_THEME))
+        assertFalse(den.owns("pirate"))
+        assertFailsWith<IllegalArgumentException> { den.chooseTheme("pirate") }
+
+        val bought = den.buyTheme("pirate", Den.THEME_PRICE)
+        assertEquals(Purse(500), bought.purse)
+        assertEquals("pirate", bought.theme)
+        assertTrue(bought.owns("pirate"))
+        assertFailsWith<IllegalArgumentException>("owned") { bought.buyTheme("pirate", Den.THEME_PRICE) }
+        assertFailsWith<IllegalArgumentException>("too dear") { bought.buyTheme("samurai", Den.THEME_PRICE) }
+        assertEquals(Den.HOUSE_THEME, bought.chooseTheme(Den.HOUSE_THEME).theme)
+        assertEquals(bought, Den.fromJson(bought.toJson()))
+    }
+
+    @Test
     fun aDenIsSavedAndReadBack() {
         val den = Den(cashedIn = 300, purse = Purse(61))
         assertEquals(den, Den.fromJson(den.toJson()))

@@ -21,12 +21,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.den.PokerHand
@@ -41,7 +45,9 @@ import com.maximx1.fads.ui.Strings
  * shared cards in the middle. During the draw, tapping one of the player's own cards marks it to throw away.
  */
 @Composable
+@Suppress("LongParameterList") // The table, how it is dressed and drawn, and what a tap on a card does.
 internal fun PokerFelt(
+    theme: DenTheme,
     table: PokerTable,
     discards: Set<Int>,
     style: CardStyle,
@@ -49,18 +55,21 @@ internal fun PokerFelt(
     modifier: Modifier = Modifier,
 ) {
     val hand = table.hand
+    val measurer = rememberTextMeasurer()
     BoxWithConstraints(modifier) {
         Canvas(Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 48.dp)) {
             val rim = size.minDimension * RIM
-            drawOval(Brush.verticalGradient(listOf(RimLight, RimDark)))
-            drawOval(
-                Brush.radialGradient(listOf(FeltLight, FeltDark)),
-                Offset(rim, rim),
-                Size(
-                    size.width - rim * 2,
-                    size.height - rim * 2,
-                ),
-            )
+            drawOval(Brush.verticalGradient(listOf(theme.rim, theme.rimDeep)))
+            val felt =
+                Path().apply {
+                    addOval(
+                        Rect(Offset(rim, rim), Size(size.width - rim * 2, size.height - rim * 2)),
+                    )
+                }
+            clipPath(felt) {
+                drawFelt(theme)
+                drawEmblem(theme, measurer)
+            }
             drawOval(
                 FeltLine,
                 Offset(rim * 2, rim * 2),
@@ -240,10 +249,6 @@ fun playerCardTag(index: Int) = "card-$index"
 /** Tags the size of the pot. */
 const val POT_TAG = "pot"
 
-private val RimLight = Color(0xFF6B4423)
-private val RimDark = Color(0xFF2E1A0B)
-private val FeltLight = Color(0xFF1F7A45)
-private val FeltDark = Color(0xFF0E3F22)
 private val FeltLine = Color(0x40FFFFFF)
 private val Turn = Color(0xFFFFE082)
 private val Said = Color(0xFFFFE082)

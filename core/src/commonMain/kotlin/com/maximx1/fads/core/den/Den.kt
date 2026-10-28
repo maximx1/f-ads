@@ -9,7 +9,8 @@ import kotlin.math.max
  * Everything the player has in the gambler's den: the [purse], how many of the points won at patience have been
  * [cashedIn] for it already, and where things stand at each table: the bets down on the [roulette] layout, and the
  * five-card [draw] and [holdem] tables, once the player has sat down at them. The points still to cash in are
- * worked out from the history, so a win counts once however often they are.
+ * worked out from the history, so a win counts once however often they are. The den is dressed in [theme], one of
+ * the [themes] the player owns, or the house's own, which costs nothing.
  */
 @Serializable
 data class Den(
@@ -18,7 +19,29 @@ data class Den(
     val roulette: Roulette = Roulette(),
     val draw: PokerTable? = null,
     val holdem: PokerTable? = null,
+    val themes: Set<String> = emptySet(),
+    val theme: String = HOUSE_THEME,
 ) {
+    fun owns(theme: String): Boolean = theme == HOUSE_THEME || theme in themes
+
+    /**
+     * This den with [theme] bought for [price] bronzes and put up. Throws [IllegalArgumentException] if it is owned
+     * already or the purse does not hold the price.
+     */
+    fun buyTheme(
+        theme: String,
+        price: Long,
+    ): Den {
+        require(!owns(theme)) { "$theme is owned already" }
+        return copy(purse = purse - price, themes = themes + theme, theme = theme)
+    }
+
+    /** This den dressed in [theme]. Throws [IllegalArgumentException] if the player does not own it. */
+    fun chooseTheme(theme: String): Den {
+        require(owns(theme)) { "$theme is not owned" }
+        return copy(theme = theme)
+    }
+
     /** The points won and not yet cashed in. */
     fun pointsLeft(history: History): Long = max(0, history.pointsWon() - cashedIn)
 
@@ -35,6 +58,12 @@ data class Den(
 
     companion object {
         const val POINTS_PER_BRONZE = 100L
+
+        /** The den's own look, which every player has. */
+        const val HOUSE_THEME = "house"
+
+        /** What every other theme costs, in bronzes. */
+        const val THEME_PRICE = 1_000L
 
         // The roulette bets are kept by the bet they are on, which is more than a string.
         private val json =

@@ -33,6 +33,7 @@ import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 /** Everything the player can do in the den. Anything the purse cannot pay for does nothing. */
+@Suppress("TooManyFunctions") // One for each thing the player can do in the den.
 interface DenActions {
     /** Trades every whole hundred points won for bronzes. */
     fun cashIn()
@@ -66,6 +67,12 @@ interface DenActions {
 
     /** Gets up from [game]'s table, folding a hand still being played. */
     fun leaveTable(game: PokerGame)
+
+    /** Buys the theme saved as [key] and puts it up, if the purse holds its price. */
+    fun buyTheme(key: String)
+
+    /** Puts up the theme saved as [key], if the player owns it. */
+    fun chooseTheme(key: String)
 }
 
 /**
@@ -147,6 +154,11 @@ class DenViewModel(
                 if (current.value === before) change { after }
             }
     }
+
+    override fun buyTheme(key: String) =
+        change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }
+
+    override fun chooseTheme(key: String) = change { if (it.owns(key)) it.chooseTheme(key) else it }
 
     // The den's players take their turns one after another until it is the player's, or the hand is over. They
     // think away from the screen's thread, since weighing up a hand takes a moment.

@@ -57,37 +57,62 @@ internal fun DenScreen(
     onClose: () -> Unit,
 ) {
     var table by rememberSaveable { mutableStateOf<DenGame?>(null) }
-    val sitting = table
-    if (sitting != null && den != null) {
-        when (sitting) {
-            DenGame.ROULETTE -> RouletteScreen(den, actions, onClose = { table = null })
-            DenGame.FIVE_CARD_DRAW -> PokerScreen(PokerGame.DRAW, den, actions, onClose = { table = null })
-            DenGame.TEXAS_HOLDEM -> PokerScreen(PokerGame.HOLDEM, den, actions, onClose = { table = null })
-        }
-        return
-    }
-
-    // The system back button or gesture goes where the Back button does.
-    BackHandler(onBack = onClose)
-    Box(Modifier.fillMaxSize().drawBehind { drawRect(Felt) }) {
+    var shopping by rememberSaveable { mutableStateOf(false) }
+    val theme = denTheme(den?.theme ?: Den.HOUSE_THEME)
+    // Everything in the den is dressed in its theme: its felt, and the colour of its buttons.
+    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = theme.accent)) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
-            Menu(den, history, actions, onClose) {
-                table =
-                    it
+            Box(Modifier.fillMaxSize().drawBehind { drawFelt(theme) }) {
+                val sitting = if (den == null) null else table
+                when {
+                    den == null || (sitting == null && !shopping) -> {
+                        Menu(den, history, actions, onClose, onTable = { table = it }, onShop = { shopping = true })
+                    }
+
+                    sitting == DenGame.ROULETTE -> {
+                        RouletteScreen(den, actions, onClose = { table = null })
+                    }
+
+                    sitting == DenGame.FIVE_CARD_DRAW -> {
+                        PokerScreen(PokerGame.DRAW, den, actions, onClose = {
+                            table =
+                                null
+                        })
+                    }
+
+                    sitting == DenGame.TEXAS_HOLDEM -> {
+                        PokerScreen(PokerGame.HOLDEM, den, actions, onClose = {
+                            table =
+                                null
+                        })
+                    }
+
+                    else -> {
+                        ThemeShop(den, actions, onClose = { shopping = false })
+                    }
+                }
             }
         }
     }
 }
 
-/** The den's own screen: the purse and the points to cash in, and the tables. [onTable] sits down at one. */
+/**
+ * The den's own screen: the purse and the points to cash in, the tables, and the theme. [onTable] sits down at a
+ * table, and [onShop] opens the shop of themes.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
+@Suppress("LongParameterList") // The den, and where each of its buttons goes.
 private fun Menu(
     den: Den?,
     history: History,
     actions: DenActions,
     onClose: () -> Unit,
     onTable: (DenGame) -> Unit,
+    onShop: () -> Unit,
 ) {
+    // The system back button or gesture goes where the Back button does.
+    BackHandler(onBack = onClose)
     Column(
         Modifier
             .fillMaxSize()
@@ -118,6 +143,16 @@ private fun Menu(
                         Text(Strings.PLAY)
                     }
                 }
+            }
+        }
+        Panel {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    Strings.themeIs(denTheme(den?.theme ?: Den.HOUSE_THEME).name),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onShop, modifier = Modifier.testTag(SHOP_TAG)) { Text(Strings.SHOP) }
             }
         }
     }
@@ -172,9 +207,11 @@ private fun Panel(content: @Composable ColumnScope.() -> Unit) {
 /** Tags the button that opens [game]'s table. */
 fun tableTag(game: DenGame) = "table-${game.name.lowercase()}"
 
+/** Tags the button that opens the shop of themes. */
+const val SHOP_TAG = "shop"
+
 /** Tags the line that says how many points are waiting to be cashed in. */
 const val POINTS_TAG = "denPoints"
 
-private val Felt = Brush.radialGradient(listOf(Color(0xFF22603A), Color(0xFF0A2214)))
 private val Gutter = 20.dp
 private val PanelWidth = 480.dp

@@ -74,10 +74,12 @@ internal fun PokerScreen(
     val table = den.table(game)
     val hand = table?.hand
     var discards by remember(hand?.number, hand?.street) { mutableStateOf(emptySet<Int>()) }
-    val style = rememberPlaceholderCardStyle()
+    val theme = denTheme(den.theme)
+    val faces = rememberPlaceholderCardStyle()
+    val style = remember(faces, theme) { theme.cards(faces) }
     val drawing = hand?.street == Street.DRAW && den.playersTurn(game)
 
-    Box(Modifier.fillMaxSize().drawBehind { drawRect(Room) }) {
+    Box(Modifier.fillMaxSize().drawBehind { drawRect(theme.room) }) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -90,6 +92,7 @@ internal fun PokerScreen(
                 }
                 if (table != null) {
                     PokerFelt(
+                        theme,
                         table,
                         discards,
                         style,
@@ -199,5 +202,3 @@ private fun Betting(
 
 /** Tags the coin of each kind that adds to a raise. */
 fun raiseCoinTag(coin: Coin) = "raise-${coin.name.lowercase()}"
-
-private val Room = Color(0xFF15211A)
