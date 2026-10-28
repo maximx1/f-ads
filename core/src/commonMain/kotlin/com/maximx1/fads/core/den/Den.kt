@@ -7,15 +7,17 @@ import kotlin.math.max
 
 /**
  * Everything the player has in the gambler's den: the [purse], how many of the points won at patience have been
- * [cashedIn] for it already, and where things stand at each table, such as the bets down on the [roulette]
- * layout. The points still to cash in are worked out from the history, so a win counts once however often they
- * are.
+ * [cashedIn] for it already, and where things stand at each table: the bets down on the [roulette] layout, and the
+ * five-card [draw] and [holdem] tables, once the player has sat down at them. The points still to cash in are
+ * worked out from the history, so a win counts once however often they are.
  */
 @Serializable
 data class Den(
     val cashedIn: Long = 0,
     val purse: Purse = Purse(),
     val roulette: Roulette = Roulette(),
+    val draw: PokerTable? = null,
+    val holdem: PokerTable? = null,
 ) {
     /** The points won and not yet cashed in. */
     fun pointsLeft(history: History): Long = max(0, history.pointsWon() - cashedIn)

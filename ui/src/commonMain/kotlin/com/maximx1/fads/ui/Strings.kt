@@ -1,6 +1,10 @@
 package com.maximx1.fads.ui
 
 import com.maximx1.fads.core.den.BetKind
+import com.maximx1.fads.core.den.HandCategory
+import com.maximx1.fads.core.den.Outcome
+import com.maximx1.fads.core.den.PokerGame
+import com.maximx1.fads.core.den.Said
 
 /** Every piece of text the game shows, in one place so that it can be translated one day. */
 @Suppress("TooManyFunctions") // One for each piece of text with a number or a name in it.
@@ -70,7 +74,6 @@ internal object Strings {
     const val FIVE_CARD_DRAW = "Five-card draw"
     const val TEXAS_HOLDEM = "Texas Hold'em"
     const val ROULETTE = "Roulette"
-    const val OPENING_SOON = "Opening soon"
     const val SPIN = "Spin"
     const val CLEAR = "Clear"
     const val REBET = "Rebet"
@@ -78,6 +81,12 @@ internal object Strings {
     const val RED = "Red"
     const val BLACK = "Black"
     const val GREEN = "Green"
+    const val YOU = "You"
+    const val FOLD = "Fold"
+    const val CHECK = "Check"
+    const val STAND_PAT = "Stand pat"
+    const val ALL_IN = "All in"
+    const val EMPTY_PURSE = "Your purse is empty. Win some patience and cash in."
     const val GOLDS = "Golds"
     const val SILVERS = "Silvers"
     const val BRONZES = "Bronzes"
@@ -156,6 +165,68 @@ internal object Strings {
             BetKind.EVEN -> "Even"
             BetKind.ODD -> "Odd"
             else -> null
+        }
+
+    fun pokerName(game: PokerGame) = if (game == PokerGame.DRAW) FIVE_CARD_DRAW else TEXAS_HOLDEM
+
+    fun pot(bronzes: Long) = "Pot: ${grouped(bronzes)}"
+
+    fun stack(bronzes: Long) = grouped(bronzes)
+
+    fun call(bronzes: Long) = "Call ${grouped(bronzes)}"
+
+    fun raiseTo(
+        bronzes: Long,
+        opening: Boolean,
+    ) = if (opening) "Bet ${grouped(bronzes)}" else "Raise to ${grouped(bronzes)}"
+
+    fun raiseWith(coins: String) = "Raise with ${coins.lowercase()}"
+
+    fun drawCards(count: Int) = if (count == 1) "Draw 1 card" else "Draw $count cards"
+
+    fun waitingFor(name: String) = "$name is thinking…"
+
+    /** What a player last did at the poker table. */
+    fun said(said: Said): String {
+        val amount = grouped(said.amount)
+        return when (said.word) {
+            Said.Word.ANTE -> "Ante $amount"
+            Said.Word.BLIND -> "Blind $amount"
+            Said.Word.FOLD -> FOLD
+            Said.Word.CHECK -> CHECK
+            Said.Word.CALL -> "Call $amount"
+            Said.Word.BET -> "Bet $amount"
+            Said.Word.RAISE -> "Raise to $amount"
+            Said.Word.ALL_IN -> "All in, $amount"
+            Said.Word.DRAW -> if (said.amount == 0L) "Stood pat" else "Drew $amount"
+        }
+    }
+
+    /** How a hand went for [seat]: what they won and with what, or what they showed, or `null` if neither. */
+    fun outcomeOf(
+        outcome: Outcome,
+        seat: Int,
+    ): String? {
+        val category = outcome.hands[seat]?.let(::handName)
+        val won = outcome.won[seat]
+        return when {
+            won > 0 && category != null -> "Won ${grouped(won)}, $category"
+            won > 0 -> "Won ${grouped(won)}"
+            else -> category
+        }
+    }
+
+    fun handName(category: HandCategory) =
+        when (category) {
+            HandCategory.HIGH_CARD -> "high card"
+            HandCategory.ONE_PAIR -> "a pair"
+            HandCategory.TWO_PAIR -> "two pair"
+            HandCategory.THREE_OF_A_KIND -> "three of a kind"
+            HandCategory.STRAIGHT -> "a straight"
+            HandCategory.FLUSH -> "a flush"
+            HandCategory.FULL_HOUSE -> "a full house"
+            HandCategory.FOUR_OF_A_KIND -> "four of a kind"
+            HandCategory.STRAIGHT_FLUSH -> "a straight flush"
         }
 
     fun restartText(deal: Long) = "Your moves on deal #$deal will be cleared."

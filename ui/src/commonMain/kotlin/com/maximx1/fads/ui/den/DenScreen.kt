@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.maximx1.fads.core.den.Den
+import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.Purse
 import com.maximx1.fads.core.engine.History
 import com.maximx1.fads.game.DenActions
@@ -56,8 +57,13 @@ internal fun DenScreen(
     onClose: () -> Unit,
 ) {
     var table by rememberSaveable { mutableStateOf<DenGame?>(null) }
-    if (table == DenGame.ROULETTE && den != null) {
-        RouletteScreen(den, actions, onClose = { table = null })
+    val sitting = table
+    if (sitting != null && den != null) {
+        when (sitting) {
+            DenGame.ROULETTE -> RouletteScreen(den, actions, onClose = { table = null })
+            DenGame.FIVE_CARD_DRAW -> PokerScreen(PokerGame.DRAW, den, actions, onClose = { table = null })
+            DenGame.TEXAS_HOLDEM -> PokerScreen(PokerGame.HOLDEM, den, actions, onClose = { table = null })
+        }
         return
     }
 
@@ -108,12 +114,8 @@ private fun Menu(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(game.label, style = MaterialTheme.typography.bodyLarge)
-                    if (game == DenGame.ROULETTE) {
-                        TextButton(onClick = { onTable(game) }, modifier = Modifier.testTag(tableTag(game))) {
-                            Text(Strings.PLAY)
-                        }
-                    } else {
-                        Text(Strings.OPENING_SOON, style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = { onTable(game) }, modifier = Modifier.testTag(tableTag(game))) {
+                        Text(Strings.PLAY)
                     }
                 }
             }
