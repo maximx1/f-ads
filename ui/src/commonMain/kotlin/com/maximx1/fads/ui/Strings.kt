@@ -76,6 +76,9 @@ internal object Strings {
     const val TEXAS_HOLDEM = "Texas Hold'em"
     const val ROULETTE = "Roulette"
     const val PLINKO = "Plinko"
+    const val VIDEO_POKER = "Video poker"
+    const val HELD = "HELD"
+    const val DRAW = "Draw"
     const val SLOTS = "Slot machine"
     const val DROP = "Drop"
     const val SPIN = "Spin"
@@ -172,6 +175,11 @@ internal object Strings {
     ) = "On each of 5 lines: ${grouped(each)}, ${bronzes(total)} in all"
 
     fun slotResult(won: Long) = if (won > 0) "Won ${bronzes(won)}!" else "No win this time"
+
+    fun paidFor(
+        hand: String,
+        won: Long,
+    ) = "$hand: won ${bronzes(won)}"
 
     fun stakeOf(bronzes: Long) = "Stake: ${bronzes(bronzes)}"
 

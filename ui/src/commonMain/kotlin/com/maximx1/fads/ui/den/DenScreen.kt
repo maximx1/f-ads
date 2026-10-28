@@ -81,6 +81,7 @@ internal fun DenScreen(
                     sitting == DenGame.ROULETTE -> RouletteScreen(den, room, actions, getUp)
                     sitting == DenGame.PLINKO -> PlinkoScreen(den, room, actions, getUp)
                     sitting == DenGame.SLOTS -> SlotsScreen(den, room, actions, getUp)
+                    sitting == DenGame.VIDEO_POKER -> VideoPokerScreen(den, room, actions, getUp)
                     sitting == DenGame.FIVE_CARD_DRAW -> PokerScreen(PokerGame.DRAW, room, den, actions, getUp)
                     sitting == DenGame.TEXAS_HOLDEM -> PokerScreen(PokerGame.HOLDEM, room, den, actions, getUp)
                     else -> ThemeShop(den, actions, onClose = { shopping = false })

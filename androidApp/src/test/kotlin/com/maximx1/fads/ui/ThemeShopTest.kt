@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.den.Purse
@@ -48,7 +49,7 @@ class ThemeShopTest {
         compose.onNodeWithText("Enter the Gambler's Den").performClick()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasTestTag(SHOP_TAG)).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Theme: House").assertExists()
-        compose.onNodeWithTag(SHOP_TAG).performClick()
+        compose.onNodeWithTag(SHOP_TAG).performScrollTo().performClick()
     }
 
     private fun tapTheme(key: String) {

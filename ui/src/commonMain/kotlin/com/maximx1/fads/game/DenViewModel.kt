@@ -13,6 +13,8 @@ import com.maximx1.fads.core.den.canMove
 import com.maximx1.fads.core.den.canRebet
 import com.maximx1.fads.core.den.clearBets
 import com.maximx1.fads.core.den.dealHand
+import com.maximx1.fads.core.den.dealVideoPoker
+import com.maximx1.fads.core.den.drawVideoPoker
 import com.maximx1.fads.core.den.dropBall
 import com.maximx1.fads.core.den.leaveTable
 import com.maximx1.fads.core.den.placeBet
@@ -25,6 +27,7 @@ import com.maximx1.fads.core.den.roulette
 import com.maximx1.fads.core.den.sitDown
 import com.maximx1.fads.core.den.spin
 import com.maximx1.fads.core.den.table
+import com.maximx1.fads.core.den.videoPoker
 import com.maximx1.fads.core.engine.History
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -93,6 +96,18 @@ interface DenActions {
     /** Pulls the lever of [room]'s slot machine with [lineBet] bronzes on each line, if the purse holds them all. */
     fun pullLever(
         lineBet: Long,
+        room: Room,
+    )
+
+    /** Deals a hand at [room]'s video poker machine for [bet] bronzes, if none waits for its draw. */
+    fun dealVideoPoker(
+        bet: Long,
+        room: Room,
+    )
+
+    /** Draws at [room]'s video poker machine, keeping the cards [held]. */
+    fun drawVideoPoker(
+        held: Set<Int>,
         room: Room,
     )
 
@@ -204,6 +219,19 @@ class DenViewModel(
         val enough = lineBet >= room.leastBet && it.purse.holds(lineBet * SlotMachine.lines.size)
         if (enough) it.pullLever(lineBet, luck(), room) else it
     }
+
+    override fun dealVideoPoker(
+        bet: Long,
+        room: Room,
+    ) = change {
+        val ready = !it.videoPoker(room).dealt && bet >= room.leastBet && it.purse.holds(bet)
+        if (ready) it.dealVideoPoker(bet, luck(), room) else it
+    }
+
+    override fun drawVideoPoker(
+        held: Set<Int>,
+        room: Room,
+    ) = change { if (it.videoPoker(room).dealt) it.drawVideoPoker(held, room) else it }
 
     override fun buyTheme(key: String) =
         change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }
