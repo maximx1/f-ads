@@ -92,7 +92,10 @@ internal fun CrapsScreen(
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) { drawEmblem(theme, measurer) }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Dice(table, onLanded = { landed = it })
+                TumblingDice(table.last?.let { listOf(it.first, it.second) }, 2, table.throws, theme, onLanded = {
+                    landed =
+                        it
+                })
                 Text(
                     if (rolling) "" else table.last?.let { Strings.rolled(it.first, it.second, it.paid) }.orEmpty(),
                     color = theme.accent,
@@ -116,49 +119,6 @@ internal fun CrapsScreen(
             onAct = { actions.rollDice(room) },
         )
     }
-}
-
-/** The two dice: tumbling when a throw is made, then showing it; [onLanded] says which throw they came to rest on. */
-@Composable
-private fun Dice(
-    table: Craps,
-    onLanded: (Long) -> Unit,
-) {
-    val landed by rememberUpdatedState(onLanded)
-    val tumble = remember { Animatable(1f) }
-    var shown by rememberSaveable { mutableLongStateOf(table.throws) }
-    LaunchedEffect(table.throws) {
-        if (table.throws == shown) return@LaunchedEffect
-        shown = table.throws
-        tumble.snapTo(0f)
-        tumble.animateTo(1f, tween(TUMBLE_MILLIS, easing = FastOutSlowInEasing))
-        landed(table.throws)
-    }
-    val last = table.last
-    val settled = tumble.value >= 1f
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        listOf(last?.first, last?.second).forEachIndexed { index, face ->
-            // While tumbling, the faces flick round as the die turns over.
-            val showing =
-                if (settled ||
-                    face == null
-                ) {
-                    face
-                } else {
-                    ((tumble.value * FLICKS).toInt() + index * 2) % FACES + 1
-                }
-            Canvas(
-                Modifier.size(DieSize).rotate((1 - tumble.value) * TURNS * (if (index == 0) 1 else -1)),
-            ) { drawDie(showing) }
-        }
-    }
-}
-
-// A die showing [face], or blank before the first throw.
-private fun DrawScope.drawDie(face: Int?) {
-    drawRoundRect(Color.White, cornerRadius = CornerRadius(size.width * DIE_CORNER))
-    val pips = face?.let { Pips.getOrNull(it - 1) }.orEmpty()
-    for (at in pips) drawCircle(Color.Black, size.width * PIP, Offset(at.x * size.width, at.y * size.width))
 }
 
 /** The layout: the place numbers with the point marked, the field, the lines, and the one-roll bets. */
@@ -211,29 +171,17 @@ private fun BetBox(
     theme: DenTheme,
     onBet: (CrapsBet) -> Unit,
     modifier: Modifier,
-) {
-    Column(
-        modifier
-            .alpha(if (open) 1f else CLOSED)
-            .background(theme.feltDeep, RoundedCornerShape(8.dp))
-            .border(if (point) 3.dp else 1.dp, theme.accent, RoundedCornerShape(8.dp))
-            .then(if (open) Modifier.clickable { onBet(bet) } else Modifier)
-            .padding(vertical = 6.dp, horizontal = 4.dp)
-            .testTag(crapsTag(bet)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(Strings.crapsBet(bet), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
-        Text(Strings.crapsOdds(bet), color = theme.accent, style = MaterialTheme.typography.labelSmall)
-        if (point) {
-            Text(
-                Strings.ON,
-                modifier = Modifier.background(theme.accent, CircleShape).padding(horizontal = 6.dp),
-                color = Color.Black,
-            )
-        }
-        if (stake > 0) Text(Strings.stack(stake), style = MaterialTheme.typography.labelLarge)
-    }
-}
+) = LayoutBox(
+    Strings.crapsBet(bet),
+    Strings.crapsOdds(bet),
+    stake,
+    open,
+    theme,
+    onTap = { onBet(bet) },
+    modifier = modifier.testTag(crapsTag(bet)),
+    lit = point,
+    puck = Strings.ON.takeIf { point },
+)
 
 /** Tags the box of the layout for [bet]. */
 fun crapsTag(bet: CrapsBet) = "craps-${bet.name.lowercase()}"
@@ -243,27 +191,3 @@ const val CRAPS_RESULT_TAG = "crapsResult"
 
 /** Tags the point, or that there is none. */
 const val POINT_TAG = "point"
-
-private val DieSize = 56.dp
-
-// Where the pips of each face sit, one to six, as shares of the die's side.
-private const val NEAR = 0.27f
-private const val MID = 0.5f
-private const val FAR = 0.73f
-private val Pips: List<List<Offset>> =
-    listOf(
-        listOf(Offset(MID, MID)),
-        listOf(Offset(NEAR, NEAR), Offset(FAR, FAR)),
-        listOf(Offset(NEAR, NEAR), Offset(MID, MID), Offset(FAR, FAR)),
-        listOf(Offset(NEAR, NEAR), Offset(FAR, NEAR), Offset(NEAR, FAR), Offset(FAR, FAR)),
-        listOf(Offset(NEAR, NEAR), Offset(FAR, NEAR), Offset(MID, MID), Offset(NEAR, FAR), Offset(FAR, FAR)),
-        listOf(NEAR, MID, FAR).flatMap { y -> listOf(Offset(NEAR, y), Offset(FAR, y)) },
-    )
-
-private const val TUMBLE_MILLIS = 800
-private const val FLICKS = 12
-private const val FACES = 6
-private const val TURNS = 540f
-private const val DIE_CORNER = 0.18f
-private const val PIP = 0.09f
-private const val CLOSED = 0.4f

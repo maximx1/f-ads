@@ -15,4 +15,5 @@ enum class DenGame(
     BLACKJACK(Strings.BLACKJACK),
     BACCARAT(Strings.BACCARAT),
     CRAPS(Strings.CRAPS),
+    SIC_BO(Strings.SIC_BO),
 }

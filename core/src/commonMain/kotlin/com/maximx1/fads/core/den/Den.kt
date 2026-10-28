@@ -29,6 +29,7 @@ data class Den(
     val blackjackTables: Map<Room, Blackjack> = emptyMap(),
     val baccaratTables: Map<Room, Baccarat> = emptyMap(),
     val crapsTables: Map<Room, Craps> = emptyMap(),
+    val sicBoTables: Map<Room, SicBo> = emptyMap(),
     val themes: Set<String> = emptySet(),
     val theme: String = HOUSE_THEME,
 ) {

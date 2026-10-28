@@ -55,7 +55,7 @@ class RouletteTest {
         File(files, GameStore.DEN).writeText(den.toJson())
         val spin = generateSequence(0L) { it + 1 }.first { Wheel.landing(it) == pocket }
         val game = GameViewModel(GameStore(storage)) { 0L }
-        val tables = DenViewModel(GameStore(storage), game.history) { spin }
+        tables = DenViewModel(GameStore(storage), game.history) { spin }
         compose.setContent { FadsTheme { GameScreen(game, Settings(storage), tables) } }
         compose.onNodeWithText("Enter the Gambler's Den").performClick()
         compose.waitUntil(TIMEOUT) {
@@ -76,7 +76,10 @@ class RouletteTest {
         }
     }
 
-    private fun savedDen(): Den? = File(files, GameStore.DEN).readText().let(Den::fromJson)
+    private lateinit var tables: DenViewModel
+
+    // The den as the table has it; it is written out to its file a moment later.
+    private fun savedDen(): Den? = tables.den.value
 
     @Test
     fun coinsGoDownWhereTheLayoutIsTappedAndTheSpinPaysWhatWon() {
@@ -129,7 +132,7 @@ class RouletteTest {
         compose.onNodeWithText("On the table: 2 bronzes").assertExists()
         assertEquals(
             mapOf(Bet(BetKind.ODD) to 1L, Bet(BetKind.CORNER, 1) to 1L),
-            compose.runOnIdle { savedDen()?.roulette?.bets },
+            savedDen()?.roulette?.bets,
         )
     }
 

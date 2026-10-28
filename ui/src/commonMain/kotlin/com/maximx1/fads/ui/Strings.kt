@@ -10,6 +10,8 @@ import com.maximx1.fads.core.den.Outcome
 import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.core.den.Said
+import com.maximx1.fads.core.den.SicBoBet
+import com.maximx1.fads.core.den.SicBoKind
 
 /** Every piece of text the game shows, in one place so that it can be translated one day. */
 @Suppress("TooManyFunctions") // One for each piece of text with a number or a name in it.
@@ -84,6 +86,7 @@ internal object Strings {
     const val BLACKJACK = "Blackjack"
     const val BACCARAT = "Baccarat"
     const val CRAPS = "Craps"
+    const val SIC_BO = "Sic bo"
     const val ROLL = "Roll"
     const val ON = "ON"
     const val POINT_OFF = "No point yet: bet the line and roll"
@@ -187,6 +190,34 @@ internal object Strings {
     ) = "On each of 5 lines: ${grouped(each)}, ${bronzes(total)} in all"
 
     fun slotResult(won: Long) = if (won > 0) "Won ${bronzes(won)}!" else "No win this time"
+
+    fun sicBoBet(bet: SicBoBet) =
+        when (bet.kind) {
+            SicBoKind.SMALL -> "Small 4–10"
+            SicBoKind.BIG -> "Big 11–17"
+            SicBoKind.ODD -> "Odd"
+            SicBoKind.EVEN -> "Even"
+            SicBoKind.ANY_TRIPLE -> "Any triple"
+            SicBoKind.TOTAL -> "${bet.value}"
+            SicBoKind.SINGLE -> "One ${bet.value}"
+            SicBoKind.DOUBLE -> "${bet.value} ${bet.value}"
+            SicBoKind.TRIPLE -> "${bet.value} ${bet.value} ${bet.value}"
+        }
+
+    fun sicBoOdds(bet: SicBoBet) =
+        when (bet.kind) {
+            SicBoKind.SMALL, SicBoKind.BIG, SicBoKind.ODD, SicBoKind.EVEN -> "1 to 1"
+            SicBoKind.ANY_TRIPLE -> "30 to 1"
+            SicBoKind.TOTAL -> "${SicBoBet.TOTAL_PAYS.getValue(bet.value)} to 1"
+            SicBoKind.SINGLE -> "1–3 to 1"
+            SicBoKind.DOUBLE -> "10 to 1"
+            SicBoKind.TRIPLE -> "180 to 1"
+        }
+
+    fun diceResult(
+        dice: List<Int>,
+        paid: Long,
+    ) = "Rolled ${dice.joinToString(" ")}: ${dice.sum()} · " + if (paid > 0) "paid ${bronzes(paid)}" else "nothing back"
 
     fun crapsBet(bet: CrapsBet) =
         when (bet) {

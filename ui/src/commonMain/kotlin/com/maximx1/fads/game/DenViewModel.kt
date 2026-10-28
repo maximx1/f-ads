@@ -10,10 +10,12 @@ import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.PokerMove
 import com.maximx1.fads.core.den.Room
+import com.maximx1.fads.core.den.SicBoBet
 import com.maximx1.fads.core.den.SlotMachine
 import com.maximx1.fads.core.den.baccarat
 import com.maximx1.fads.core.den.betBaccarat
 import com.maximx1.fads.core.den.betCraps
+import com.maximx1.fads.core.den.betSicBo
 import com.maximx1.fads.core.den.blackjack
 import com.maximx1.fads.core.den.botsTurn
 import com.maximx1.fads.core.den.canBetCraps
@@ -23,6 +25,7 @@ import com.maximx1.fads.core.den.canRebet
 import com.maximx1.fads.core.den.clearBaccarat
 import com.maximx1.fads.core.den.clearBets
 import com.maximx1.fads.core.den.clearCraps
+import com.maximx1.fads.core.den.clearSicBo
 import com.maximx1.fads.core.den.craps
 import com.maximx1.fads.core.den.dealBlackjack
 import com.maximx1.fads.core.den.dealHand
@@ -39,7 +42,9 @@ import com.maximx1.fads.core.den.playersTurn
 import com.maximx1.fads.core.den.pullLever
 import com.maximx1.fads.core.den.rebet
 import com.maximx1.fads.core.den.rollDice
+import com.maximx1.fads.core.den.rollSicBo
 import com.maximx1.fads.core.den.roulette
+import com.maximx1.fads.core.den.sicBo
 import com.maximx1.fads.core.den.sitDown
 import com.maximx1.fads.core.den.spin
 import com.maximx1.fads.core.den.table
@@ -164,6 +169,19 @@ interface DenActions {
 
     /** Throws the dice at [room]'s craps table, if anything is bet. */
     fun rollDice(room: Room)
+
+    /** Puts [amount] more bronzes on [bet] at [room]'s sic bo table. */
+    fun betSicBo(
+        bet: SicBoBet,
+        amount: Long,
+        room: Room,
+    )
+
+    /** Takes the bets back off [room]'s sic bo table. */
+    fun clearSicBo(room: Room)
+
+    /** Throws the three dice at [room]'s sic bo table, if anything is bet. */
+    fun rollSicBo(room: Room)
 
     /** Buys the theme saved as [key] and puts it up, if the purse holds its price. */
     fun buyTheme(key: String)
@@ -325,6 +343,17 @@ class DenViewModel(
     override fun clearCraps(room: Room) = change { it.clearCraps(room) }
 
     override fun rollDice(room: Room) = change { if (it.craps(room).bets.isEmpty()) it else it.rollDice(luck(), room) }
+
+    override fun betSicBo(
+        bet: SicBoBet,
+        amount: Long,
+        room: Room,
+    ) = change { if (amount >= room.leastBet && it.purse.holds(amount)) it.betSicBo(bet, amount, room) else it }
+
+    override fun clearSicBo(room: Room) = change { it.clearSicBo(room) }
+
+    override fun rollSicBo(room: Room) =
+        change { if (it.sicBo(room).bets.isEmpty()) it else it.rollSicBo(luck(), room) }
 
     override fun buyTheme(key: String) =
         change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }
