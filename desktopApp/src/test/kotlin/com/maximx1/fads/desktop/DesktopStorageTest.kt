@@ -2,6 +2,7 @@ package com.maximx1.fads.desktop
 
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -26,6 +27,20 @@ class DesktopStorageTest {
                 files.map { it.fileName.toString() }.toList().toSet()
             },
         )
+    }
+
+    @Test
+    fun aFileBeingReplacedIsNeverMissingForAReadAtTheSameTime() {
+        val storage = DesktopStorage(folder)
+        storage.write("game.json", "0")
+        val saving = thread { repeat(SAVES) { storage.write("game.json", "${it + 1}") } }
+        var missing = 0
+        while (saving.isAlive) {
+            if (storage.read("game.json") == null) missing++
+        }
+        saving.join()
+        assertEquals(0, missing)
+        assertEquals("$SAVES", storage.read("game.json"))
     }
 
     @Test
@@ -71,5 +86,9 @@ class DesktopStorageTest {
             Path.of("/home/justin/Fuck Ads"),
             DesktopStorage.directoryFor("Fuck Ads", os = "Windows 11", home = home, environment = nothingSet),
         )
+    }
+
+    private companion object {
+        const val SAVES = 2_000
     }
 }

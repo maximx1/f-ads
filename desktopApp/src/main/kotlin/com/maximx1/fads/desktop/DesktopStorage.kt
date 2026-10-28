@@ -2,6 +2,7 @@ package com.maximx1.fads.desktop
 
 import com.maximx1.fads.game.Storage
 import java.io.IOException
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -23,10 +24,17 @@ class DesktopStorage(
     ) {
         try {
             Files.createDirectories(directory)
-            // Written beside the real file and then moved over it, so a crash half way leaves the old one.
+            // Written beside the real file and then moved over it, so a crash half way leaves the old one. The move
+            // must be atomic: a plain move that replaces a file deletes it first, so for a moment there is none.
             val draft = Files.createTempFile(directory, name, ".tmp")
             Files.writeString(draft, text)
-            Files.move(draft, directory.resolve(name), StandardCopyOption.REPLACE_EXISTING)
+            val file = directory.resolve(name)
+            try {
+                Files.move(draft, file, StandardCopyOption.ATOMIC_MOVE)
+            } catch (ignored: AtomicMoveNotSupportedException) {
+                // Some network drives cannot, and a save that might be lost to a crash beats none at all.
+                Files.move(draft, file, StandardCopyOption.REPLACE_EXISTING)
+            }
         } catch (e: IOException) {
             System.err.println("Could not save $name: $e")
         }

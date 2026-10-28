@@ -35,6 +35,10 @@ android {
             all {
                 // Robolectric's Android 17 support reaches into this JDK-internal package.
                 it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+                // On the JetBrains runtime that ships with Android Studio, java.io goes through NIO, and a file
+                // renamed over another one is missing for a moment. AtomicFile saves by doing just that, so a test
+                // reading a save could find nothing. A phone renames in one step, and so does this without NIO.
+                it.systemProperty("jbr.java.io.use.nio", "false")
             }
         }
     }
