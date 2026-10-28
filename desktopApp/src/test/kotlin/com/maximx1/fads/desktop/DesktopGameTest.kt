@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.GameType
+import com.maximx1.fads.game.DenViewModel
 import com.maximx1.fads.game.GameStore
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.game.Storage
@@ -47,7 +48,8 @@ class DesktopGameTest {
     fun theGameComesUpPlaysAMoveSavesItAndChangesTheme() {
         saved[GameStore.GAME] = """{"dealNumber":1}"""
         val game = GameViewModel(GameStore(storage)) { System.nanoTime() / 1_000_000 }
-        compose.setContent { FadsTheme { GameScreen(game, Settings(storage)) } }
+        val den = DenViewModel(GameStore(storage), game.history)
+        compose.setContent { FadsTheme { GameScreen(game, Settings(storage), den) } }
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasTestTag(ELAPSED_TAG)).fetchSemanticsNodes().isNotEmpty() }
 
         compose.onNodeWithTag("3D").performClick()

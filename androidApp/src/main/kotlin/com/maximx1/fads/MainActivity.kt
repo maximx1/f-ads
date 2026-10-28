@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.maximx1.fads.game.DenViewModel
 import com.maximx1.fads.game.FileStorage
 import com.maximx1.fads.game.GameStore
 import com.maximx1.fads.game.GameViewModel
@@ -28,7 +29,9 @@ class MainActivity : ComponentActivity() {
             val pale = settings.theme.isPale
             LaunchedEffect(pale) { systemBarIcons(dark = pale) }
             FadsTheme {
-                GameScreen(viewModel(factory = gameFactory), settings)
+                val game: GameViewModel = viewModel(factory = gameFactory)
+                val den: DenViewModel = viewModel(factory = denFactory(game))
+                GameScreen(game, settings, den)
             }
         }
     }
@@ -39,6 +42,12 @@ class MainActivity : ComponentActivity() {
             viewModelFactory {
                 initializer { GameViewModel(GameStore(FileStorage(filesDir)), now = SystemClock::elapsedRealtime) }
             }
+
+    // The den cashes in the points won at the games, so it reads their history.
+    private fun denFactory(game: GameViewModel) =
+        viewModelFactory {
+            initializer { DenViewModel(GameStore(FileStorage(filesDir)), game.history) }
+        }
 
     private fun systemBarIcons(dark: Boolean) {
         val style =

@@ -59,6 +59,20 @@ internal object Strings {
     const val STEP_FORWARD = "Step forward"
     const val SPEED = "Speed"
 
+    const val DEN = "Gambler's Den"
+    const val ENTER_DEN = "Enter the Gambler's Den"
+    const val DEN_TITLE = "The Gambler's Den"
+    const val CASH_IN = "Cash in"
+    const val NOTHING_TO_CASH_IN = "Win games of patience to earn points. Every 100 points make a bronze."
+    const val TABLES = "Tables"
+    const val FIVE_CARD_DRAW = "Five-card draw"
+    const val TEXAS_HOLDEM = "Texas Hold'em"
+    const val ROULETTE = "Roulette"
+    const val OPENING_SOON = "Opening soon"
+    const val GOLDS = "Golds"
+    const val SILVERS = "Silvers"
+    const val BRONZES = "Bronzes"
+
     fun draw(cards: Int) = "Draw $cards"
 
     fun suits(count: Int) = if (count == 1) "1 suit" else "$count suits"
@@ -104,6 +118,15 @@ internal object Strings {
 
     fun speed(times: Int) = "$times×"
 
+    fun pointsToCashIn(points: Long) = "Points to cash in: ${grouped(points)}"
+
+    fun bronzes(count: Long) = if (count == 1L) "1 bronze" else "${grouped(count)} bronzes"
+
+    fun cashInText(
+        points: Long,
+        bronzes: Long,
+    ) = "Trade ${grouped(points)} points for ${bronzes(bronzes)}?"
+
     fun restartText(deal: Long) = "Your moves on deal #$deal will be cleared."
 
     fun winText(
@@ -111,6 +134,18 @@ internal object Strings {
         moves: Int,
         clock: String,
     ) = "Deal #$deal solved. Moves: $moves. Time: $clock."
+}
+
+/** [number] with its thousands set apart by commas, such as 12,345. */
+internal fun grouped(number: Long): String {
+    val digits = number.toString().removePrefix("-")
+    val sign = if (number < 0) "-" else ""
+    return sign +
+        digits
+            .reversed()
+            .chunked(DIGITS_IN_GROUP)
+            .joinToString(",")
+            .reversed()
 }
 
 /** A time as a clock shows it: `05:07`, or `1:05:07` once it runs to hours. */
@@ -124,6 +159,7 @@ internal fun clockText(seconds: Long): String {
 internal fun clockTextOfMillis(millis: Long): String = clockText(millis / MILLIS_IN_SECOND)
 
 private const val MILLIS_IN_SECOND = 1000
+private const val DIGITS_IN_GROUP = 3
 private const val SECONDS_IN_MINUTE = 60
 private const val MINUTES_IN_HOUR = 60
 private const val SECONDS_IN_HOUR = 3600

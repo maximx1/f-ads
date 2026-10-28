@@ -1,0 +1,12 @@
+package com.maximx1.fads.ui.den
+
+import com.maximx1.fads.ui.Strings
+
+/** The games played in the den. */
+internal enum class DenGame(
+    val label: String,
+) {
+    FIVE_CARD_DRAW(Strings.FIVE_CARD_DRAW),
+    TEXAS_HOLDEM(Strings.TEXAS_HOLDEM),
+    ROULETTE(Strings.ROULETTE),
+}

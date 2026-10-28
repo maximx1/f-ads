@@ -1,5 +1,6 @@
 package com.maximx1.fads.game
 
+import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.GameType
 import com.maximx1.fads.core.engine.History
@@ -37,9 +38,15 @@ class GameStore(
 
     suspend fun save(history: History) = withContext(Dispatchers.IO) { storage.write(HISTORY, history.toJson()) }
 
+    /** The player's den. An empty one if nothing was saved or it cannot be read. */
+    suspend fun loadDen(): Den = withContext(Dispatchers.IO) { storage.read(DEN)?.let(Den::fromJson) ?: Den() }
+
+    suspend fun save(den: Den) = withContext(Dispatchers.IO) { storage.write(DEN, den.toJson()) }
+
     companion object {
         const val GAME = "game.json"
         const val HISTORY = "history.json"
+        const val DEN = "den.json"
 
         // Named from when it held only FreeCell's best times, and kept so that those still load.
         const val RECORDS = "best-times.json"

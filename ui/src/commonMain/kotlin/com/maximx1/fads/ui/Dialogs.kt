@@ -47,12 +47,14 @@ import com.maximx1.fads.ui.theme.TableTheme
  * where the theme and the other settings are changed.
  */
 @Composable
+@Suppress("LongParameterList") // What it shows, and where each of its buttons goes.
 internal fun PauseDialog(
     game: Game<*, *>,
     records: Records,
     settings: Settings,
     onResume: () -> Unit,
     onHistory: () -> Unit,
+    onDen: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onResume,
@@ -85,7 +87,12 @@ internal fun PauseDialog(
             }
         },
         confirmButton = { TextButton(onClick = onResume) { Text(Strings.RESUME) } },
-        dismissButton = { TextButton(onClick = onHistory) { Text(Strings.HISTORY) } },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onDen) { Text(Strings.DEN) }
+                TextButton(onClick = onHistory) { Text(Strings.HISTORY) }
+            }
+        },
     )
 }
 

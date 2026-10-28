@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.maximx1.fads.game.DenViewModel
 import com.maximx1.fads.game.GameStore
 import com.maximx1.fads.game.GameViewModel
 import com.maximx1.fads.ui.FadsTheme
@@ -25,6 +26,7 @@ fun main() =
         val storage = remember { DesktopStorage(DesktopStorage.directoryFor(APP_NAME)) }
         val settings = remember { Settings(storage) }
         val game = remember { GameViewModel(GameStore(storage)) { System.nanoTime() / NANOS_IN_MILLI } }
+        val den = remember { DenViewModel(GameStore(storage), game.history) }
         val scope = rememberCoroutineScope()
 
         Window(
@@ -38,6 +40,6 @@ fun main() =
             title = APP_NAME,
             state = rememberWindowState(size = FirstWindowSize),
         ) {
-            FadsTheme { GameScreen(game, settings) }
+            FadsTheme { GameScreen(game, settings, den) }
         }
     }

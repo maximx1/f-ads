@@ -31,7 +31,9 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maximx1.fads.core.engine.Game
 import com.maximx1.fads.core.engine.Played
+import com.maximx1.fads.game.DenViewModel
 import com.maximx1.fads.game.GameViewModel
+import com.maximx1.fads.ui.den.DenScreen
 import com.maximx1.fads.ui.theme.ClockLook
 import com.maximx1.fads.ui.theme.look
 import kotlinx.coroutines.delay
@@ -39,17 +41,18 @@ import kotlin.time.Clock
 
 private enum class Prompt { NONE, PAUSED, NEW_GAME, RESTART }
 
-/** What fills the screen: the table, the history of games played, or one of them played back. */
-private enum class Screen { TABLE, HISTORY, WATCH }
+/** What fills the screen: the table, the history of games played, one of them played back, or the den. */
+private enum class Screen { TABLE, HISTORY, WATCH, DEN }
 
 /**
  * The whole game: the choice of game on a first open, then the table with whichever dialog is up over it, or the
- * history of games played, or one of them being watched.
+ * history of games played, or one of them being watched, or the gambler's [den].
  */
 @Composable
 fun GameScreen(
     viewModel: GameViewModel,
     settings: Settings,
+    den: DenViewModel,
 ) {
     val game by viewModel.game.collectAsStateWithLifecycle()
     val elapsedSeconds by viewModel.elapsedSeconds.collectAsStateWithLifecycle()
@@ -67,17 +70,16 @@ fun GameScreen(
 
     val type = settings.gameType
     if (type == null) {
-        Table(null, elapsedSeconds, settings, viewModel, onPrompt = {})
-        Landing(
-            onPlay = {
-                settings.gameType = it
-                viewModel.newGame(it, GameViewModel.randomDealNumber())
-            },
-        )
+        FirstOpen(screen == Screen.DEN, viewModel, settings, den) { screen = if (it) Screen.DEN else Screen.TABLE }
         return
     }
     LaunchedEffect(viewModel, type) { viewModel.open(type) }
 
+    // Back to the game, paused as it was when the history or the den was opened.
+    val backToPause = {
+        prompt = Prompt.PAUSED
+        screen = Screen.TABLE
+    }
     val shown = watching
     when {
         screen == Screen.HISTORY -> {
@@ -93,12 +95,12 @@ fun GameScreen(
                     watching = it
                     screen = Screen.WATCH
                 },
-                // Back to the game, paused as it was when the history was opened.
-                onClose = {
-                    prompt = Prompt.PAUSED
-                    screen = Screen.TABLE
-                },
+                onClose = backToPause,
             )
+        }
+
+        screen == Screen.DEN -> {
+            Den(den, viewModel, onClose = backToPause)
         }
 
         screen == Screen.WATCH && shown != null -> {
@@ -108,7 +110,14 @@ fun GameScreen(
         else -> {
             // What was being watched does not survive the app being rebuilt, so that falls back to the table.
             Table(game, elapsedSeconds, settings, viewModel, onPrompt = { prompt = it })
-            Prompts(prompt, viewModel, settings, onPrompt = { prompt = it }, onHistory = { screen = Screen.HISTORY })
+            Prompts(
+                prompt,
+                viewModel,
+                settings,
+                onPrompt = { prompt = it },
+                onHistory = { screen = Screen.HISTORY },
+                onDen = { screen = Screen.DEN },
+            )
         }
     }
 }
@@ -131,14 +140,54 @@ private fun PastGames(
     )
 }
 
+/**
+ * The first open, before any game is chosen: the choice of game over a bare table, or the den if [inDen]. [onDen]
+ * goes into the den, or back out of it.
+ */
+@Composable
+private fun FirstOpen(
+    inDen: Boolean,
+    viewModel: GameViewModel,
+    settings: Settings,
+    den: DenViewModel,
+    onDen: (Boolean) -> Unit,
+) {
+    if (inDen) {
+        Den(den, viewModel, onClose = { onDen(false) })
+        return
+    }
+    Table(null, 0L, settings, viewModel, onPrompt = {})
+    Landing(
+        onPlay = {
+            settings.gameType = it
+            viewModel.newGame(it, GameViewModel.randomDealNumber())
+        },
+        onDen = { onDen(true) },
+    )
+}
+
+/** The gambler's den, with the points won at patience to cash in. */
+@Composable
+private fun Den(
+    den: DenViewModel,
+    viewModel: GameViewModel,
+    onClose: () -> Unit,
+) {
+    val saved by den.den.collectAsStateWithLifecycle()
+    val history by viewModel.history.collectAsStateWithLifecycle()
+    DenScreen(saved, history, onCashIn = den::cashIn, onClose = onClose)
+}
+
 /** Whichever dialog [prompt] calls for over the table, or the win when the game has just been won. */
 @Composable
+@Suppress("LongParameterList") // The prompt and the screens it can open.
 private fun Prompts(
     prompt: Prompt,
     viewModel: GameViewModel,
     settings: Settings,
     onPrompt: (Prompt) -> Unit,
     onHistory: () -> Unit,
+    onDen: () -> Unit,
 ) {
     val game by viewModel.game.collectAsStateWithLifecycle()
     val records by viewModel.records.collectAsStateWithLifecycle()
@@ -147,7 +196,14 @@ private fun Prompts(
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = settings.theme.look.accent)) {
         when (prompt) {
             Prompt.PAUSED -> {
-                PauseDialog(current, records, settings, onResume = { onPrompt(Prompt.NONE) }, onHistory = onHistory)
+                PauseDialog(
+                    current,
+                    records,
+                    settings,
+                    onResume = { onPrompt(Prompt.NONE) },
+                    onHistory = onHistory,
+                    onDen = onDen,
+                )
             }
 
             Prompt.NEW_GAME -> {
