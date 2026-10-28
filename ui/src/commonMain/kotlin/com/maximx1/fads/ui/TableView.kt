@@ -267,11 +267,11 @@ private const val SNAP_BELOW = 1.15f
 // How much one notch of a mouse wheel zooms.
 private const val WHEEL_STEP = 1.15f
 
-// How quickly a thrown table slows down. At this it glides on about a third of a second's worth of the speed it was
+// How quickly a thrown table slows down. At this it glides on about a quarter of a second's worth of the speed it was
 // thrown at.
-private const val GLIDE_FRICTION = 0.7f
+private const val GLIDE_FRICTION = 1f
 
 // A thrown table glides on no more than this many times as far as the fingers moved it.
-private const val GLIDE_REACH = 3f
+private const val GLIDE_REACH = 2f
 
 private val Glide = exponentialDecay<Offset>(GLIDE_FRICTION)
