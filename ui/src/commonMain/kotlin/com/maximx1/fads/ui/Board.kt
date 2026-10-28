@@ -204,7 +204,8 @@ private fun Modifier.gestures(
             detectDragGestures(
                 onDragStart = { hand.pickUp(id) },
                 onDragEnd = hand::drop,
-                onDragCancel = hand::drop,
+                // Taken over, by a second finger pinching to zoom: the cards go back without playing anything.
+                onDragCancel = hand::putBack,
                 onDrag = { change, amount ->
                     change.consume()
                     hand.carry(amount)
@@ -263,14 +264,19 @@ private class Hand<M : Any>(
     }
 
     /** Lets go. Plays the move the drop makes, if any; otherwise the cards slide back. */
-    fun drop() {
+    fun drop() = letGo(play = true)
+
+    /** Lets go without playing anything, so the cards slide back. */
+    fun putBack() = letGo(play = false)
+
+    private fun letGo(play: Boolean) {
         val table = table
         val ids = held
         held = emptyList()
         val lead = ids.firstOrNull()?.let { positions[it] } ?: return
         val arrangement = table?.arrangement ?: return
         val size = arrangement.cardSize
-        arrangement.drop(ids, lead.value + Offset(size.width / 2, size.height / 2))?.let(table.onMove)
+        if (play) arrangement.drop(ids, lead.value + Offset(size.width / 2, size.height / 2))?.let(table.onMove)
         // Head home. If a move was played, the table retargets the cards to their new place a moment later.
         val homes = arrangement.cards.associate { it.id to it.topLeft }
         for (id in ids) {

@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -118,21 +117,15 @@ private fun <S : Any, M : Any> Replay(
             style = MaterialTheme.typography.titleMedium.merge(look.clock.text),
             modifier = Modifier.padding(vertical = 4.dp),
         )
-        Box(Modifier.weight(1f).fillMaxWidth().padding(look.boardPadding)) {
-            GameTable(
-                rules = game.rules,
-                state = positions[playback.step],
-                onMove = {},
-                modifier = Modifier.fillMaxSize(),
-                paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent, look.pane) },
-            )
-            // Over the cards, so they cannot be picked up: this is to watch, not to play.
-            Box(
-                Modifier.fillMaxSize().pointerInput(
-                    Unit,
-                ) { awaitPointerEventScope { while (true) awaitPointerEvent() } },
-            )
-        }
+        // This is to watch, not to play.
+        GameTable(
+            rules = game.rules,
+            state = positions[playback.step],
+            onMove = {},
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(look.boardPadding),
+            paint = remember(cards, look) { BoardPaint(cards, look.slotColor, look.accent, look.pane) },
+            playable = false,
+        )
         Text(
             Strings.moveOf(playback.step, playback.last),
             style = MaterialTheme.typography.bodyMedium.merge(look.clock.text),
