@@ -9,4 +9,5 @@ enum class DenGame(
     FIVE_CARD_DRAW(Strings.FIVE_CARD_DRAW),
     TEXAS_HOLDEM(Strings.TEXAS_HOLDEM),
     ROULETTE(Strings.ROULETTE),
+    PLINKO(Strings.PLINKO),
 }

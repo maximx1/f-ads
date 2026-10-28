@@ -75,6 +75,8 @@ internal object Strings {
     const val FIVE_CARD_DRAW = "Five-card draw"
     const val TEXAS_HOLDEM = "Texas Hold'em"
     const val ROULETTE = "Roulette"
+    const val PLINKO = "Plinko"
+    const val DROP = "Drop"
     const val SPIN = "Spin"
     const val CLEAR = "Clear"
     const val REBET = "Rebet"
@@ -162,6 +164,13 @@ internal object Strings {
         colour: String,
         won: Long,
     ) = "$pocket $colour: " + if (won > 0) "won ${bronzes(won)}" else "no win"
+
+    fun stakeOf(bronzes: Long) = "Stake: ${bronzes(bronzes)}"
+
+    fun landedIn(
+        multiplier: String,
+        won: Long,
+    ) = "Landed in $multiplier: " + if (won > 0) "won ${bronzes(won)}" else "no win"
 
     fun dozen(index: Int) = listOf("1st 12", "2nd 12", "3rd 12")[index]
 

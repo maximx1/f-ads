@@ -12,6 +12,7 @@ import com.maximx1.fads.core.den.canMove
 import com.maximx1.fads.core.den.canRebet
 import com.maximx1.fads.core.den.clearBets
 import com.maximx1.fads.core.den.dealHand
+import com.maximx1.fads.core.den.dropBall
 import com.maximx1.fads.core.den.leaveTable
 import com.maximx1.fads.core.den.placeBet
 import com.maximx1.fads.core.den.playBot
@@ -78,6 +79,12 @@ interface DenActions {
     /** Gets up from [game]'s table in [room], folding a hand still being played. */
     fun leaveTable(
         game: PokerGame,
+        room: Room,
+    )
+
+    /** Drops a ball at [room]'s plinko table with [stake] bronzes on it, if the purse holds that much. */
+    fun dropBall(
+        stake: Long,
         room: Room,
     )
 
@@ -176,6 +183,11 @@ class DenViewModel(
                 if (current.value === before) change { after }
             }
     }
+
+    override fun dropBall(
+        stake: Long,
+        room: Room,
+    ) = change { if (stake >= room.leastBet && it.purse.holds(stake)) it.dropBall(stake, luck(), room) else it }
 
     override fun buyTheme(key: String) =
         change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }
