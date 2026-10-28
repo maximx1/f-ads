@@ -14,4 +14,5 @@ enum class DenGame(
     VIDEO_POKER(Strings.VIDEO_POKER),
     BLACKJACK(Strings.BLACKJACK),
     BACCARAT(Strings.BACCARAT),
+    CRAPS(Strings.CRAPS),
 }

@@ -4,10 +4,15 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -104,6 +109,41 @@ internal fun ChipButton(
     }
 }
 
+/**
+ * The chips to choose between for the next bet, and the buttons that take the bets back and [act] on them: deal,
+ * roll, or the like. Both buttons wait until the table is [ready].
+ */
+@Composable
+@Suppress("LongParameterList") // The chips, and what each button says and does.
+internal fun BetControls(
+    chips: List<Chip>,
+    chosen: Int,
+    ready: Boolean,
+    act: String,
+    onChoose: (Int) -> Unit,
+    onClear: () -> Unit,
+    onAct: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        chips.forEachIndexed { index, chip ->
+            ChipButton(
+                chip,
+                chosen = index == chosen,
+                description = Strings.betIn(chip.coin.label),
+                onClick = { onChoose(index) },
+                modifier = Modifier.size(BetChip).testTag(chipTag(chip.coin)),
+            )
+        }
+        Box(Modifier.weight(1f))
+        OutlinedButton(onClick = onClear, enabled = ready) { Text(Strings.CLEAR) }
+        Button(onClick = onAct, enabled = ready) { Text(act) }
+    }
+}
+
 /** A coin, lit from the top left, at [centre] and [radius]: unless told otherwise, filling the draw area. */
 internal fun DrawScope.drawCoin(
     coin: Coin,
@@ -168,6 +208,8 @@ private val SilverEdge = Color(0xFF5F6B76)
 private val BronzeFace = Color(0xFFC27C45)
 private val BronzeEdge = Color(0xFF5E3417)
 private val BronzeShine = Color(0xFFF3C79C)
+
+private val BetChip = 40.dp
 
 private const val HIGH_GOLD = 25_000L
 private const val HIGH_SILVER = 5_000L

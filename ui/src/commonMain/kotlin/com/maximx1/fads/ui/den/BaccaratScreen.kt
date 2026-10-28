@@ -106,45 +106,15 @@ internal fun BaccaratScreen(
             }
         }
         Boxes(table.bets, theme, onBet = { actions.betBaccarat(it, chips[chosen].worth, room) })
-        Controls(
+        BetControls(
             chips,
             chosen,
-            bets = table.bets.isNotEmpty(),
+            ready = table.bets.isNotEmpty(),
+            act = Strings.DEAL,
             onChoose = { chosen = it },
             onClear = { actions.clearBaccarat(room) },
-            onDeal = { actions.playBaccarat(room) },
+            onAct = { actions.playBaccarat(room) },
         )
-    }
-}
-
-/** The chips to choose between, and the buttons that take the bets back or deal the coup. */
-@Composable
-@Suppress("LongParameterList") // The chips, and what each button does.
-private fun Controls(
-    chips: List<Chip>,
-    chosen: Int,
-    bets: Boolean,
-    onChoose: (Int) -> Unit,
-    onClear: () -> Unit,
-    onDeal: () -> Unit,
-) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        chips.forEachIndexed { index, chip ->
-            ChipButton(
-                chip,
-                chosen = index == chosen,
-                description = Strings.betIn(chip.coin.label),
-                onClick = { onChoose(index) },
-                modifier = Modifier.size(ChipSize).testTag(chipTag(chip.coin)),
-            )
-        }
-        Box(Modifier.weight(1f))
-        OutlinedButton(onClick = onClear, enabled = bets) { Text(Strings.CLEAR) }
-        Button(onClick = onDeal, enabled = bets) { Text(Strings.DEAL) }
     }
 }
 
@@ -197,7 +167,6 @@ fun sideTag(side: BaccaratSide) = "baccarat-${side.name.lowercase()}"
 /** Tags how the last coup went. */
 const val BACCARAT_RESULT_TAG = "baccaratResult"
 
-private val ChipSize = 40.dp
 private val CARD_MOST = 72.dp
 
 private const val CARDS_ACROSS = 5f

@@ -3,6 +3,7 @@ package com.maximx1.fads.ui
 import com.maximx1.fads.core.den.BaccaratSide
 import com.maximx1.fads.core.den.BetKind
 import com.maximx1.fads.core.den.BlackjackMove
+import com.maximx1.fads.core.den.CrapsBet
 import com.maximx1.fads.core.den.HandCategory
 import com.maximx1.fads.core.den.HandResult
 import com.maximx1.fads.core.den.Outcome
@@ -82,6 +83,10 @@ internal object Strings {
     const val VIDEO_POKER = "Video poker"
     const val BLACKJACK = "Blackjack"
     const val BACCARAT = "Baccarat"
+    const val CRAPS = "Craps"
+    const val ROLL = "Roll"
+    const val ON = "ON"
+    const val POINT_OFF = "No point yet: bet the line and roll"
     const val DEALER = "Dealer"
     const val BLACKJACK_RULES = "Blackjack pays 3 to 2 · Dealer stands on 17"
     const val HELD = "HELD"
@@ -182,6 +187,31 @@ internal object Strings {
     ) = "On each of 5 lines: ${grouped(each)}, ${bronzes(total)} in all"
 
     fun slotResult(won: Long) = if (won > 0) "Won ${bronzes(won)}!" else "No win this time"
+
+    fun crapsBet(bet: CrapsBet) =
+        when (bet) {
+            CrapsBet.PASS -> "Pass line"
+            CrapsBet.DONT_PASS -> "Don't pass"
+            CrapsBet.FIELD -> "Field 2 3 4 9 10 11 12"
+            CrapsBet.ANY_SEVEN -> "Any seven"
+            CrapsBet.ANY_CRAPS -> "Any craps"
+            else -> bet.number.toString()
+        }
+
+    fun crapsOdds(bet: CrapsBet) =
+        when (bet) {
+            CrapsBet.FIELD -> "1 to 1, 2 and 12 double"
+            CrapsBet.PASS, CrapsBet.DONT_PASS -> "1 to 1"
+            else -> "${bet.pays} to ${bet.per}"
+        }
+
+    fun pointIs(point: Int) = "The point is $point"
+
+    fun rolled(
+        first: Int,
+        second: Int,
+        paid: Long,
+    ) = "Rolled $first and $second: ${first + second} · " + if (paid > 0) "paid ${bronzes(paid)}" else "nothing back"
 
     fun baccaratSide(side: BaccaratSide) =
         when (side) {
