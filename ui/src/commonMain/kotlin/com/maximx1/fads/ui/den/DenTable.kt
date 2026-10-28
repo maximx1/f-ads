@@ -54,6 +54,7 @@ internal fun TumblingDice(
     theme: DenTheme,
     onLanded: (Long) -> Unit,
     size: Dp = 56.dp,
+    drawFace: DrawScope.(Int?) -> Unit = { drawDie(it, theme.back) },
 ) {
     val landed by rememberUpdatedState(onLanded)
     val tumble = remember { Animatable(1f) }
@@ -78,7 +79,7 @@ internal fun TumblingDice(
                     ((tumble.value * FLICKS).toInt() + index * 2) % FACES + 1
                 }
             val turn = (1 - tumble.value) * TURNS * (if (index % 2 == 0) 1 else -1)
-            Canvas(Modifier.size(size).rotate(turn)) { drawDie(showing, theme.back) }
+            Canvas(Modifier.size(size).rotate(turn)) { drawFace(showing) }
         }
     }
 }
@@ -110,6 +111,7 @@ internal fun LayoutBox(
     modifier: Modifier = Modifier,
     lit: Boolean = false,
     puck: String? = null,
+    picture: (DrawScope.() -> Unit)? = null,
 ) {
     Column(
         modifier
@@ -120,6 +122,7 @@ internal fun LayoutBox(
             .padding(vertical = 6.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        if (picture != null) Canvas(Modifier.size(PictureSize), onDraw = picture)
         Text(label, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
         // Lifted towards white, so a dark accent still reads on the deep felt.
         if (odds.isNotEmpty()) {
@@ -139,6 +142,8 @@ internal fun LayoutBox(
         if (stake > 0) Text(Strings.stack(stake), style = MaterialTheme.typography.labelLarge)
     }
 }
+
+private val PictureSize = 44.dp
 
 // Where the pips of each face sit, one to six, as shares of the die's side.
 private const val NEAR = 0.27f

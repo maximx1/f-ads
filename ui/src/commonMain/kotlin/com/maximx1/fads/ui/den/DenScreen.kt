@@ -40,6 +40,7 @@ import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.Purse
 import com.maximx1.fads.core.den.Room
+import com.maximx1.fads.core.den.SymbolDiceGame
 import com.maximx1.fads.core.den.canEnter
 import com.maximx1.fads.core.engine.History
 import com.maximx1.fads.game.DenActions
@@ -106,6 +107,8 @@ private fun Table(
         DenGame.BACCARAT -> BaccaratScreen(den, room, actions, onClose)
         DenGame.CRAPS -> CrapsScreen(den, room, actions, onClose)
         DenGame.SIC_BO -> SicBoScreen(den, room, actions, onClose)
+        DenGame.CHUCK_A_LUCK -> SymbolDiceScreen(SymbolDiceGame.CHUCK_A_LUCK, den, room, actions, onClose)
+        DenGame.CROWN_AND_ANCHOR -> SymbolDiceScreen(SymbolDiceGame.CROWN_AND_ANCHOR, den, room, actions, onClose)
     }
 }
 

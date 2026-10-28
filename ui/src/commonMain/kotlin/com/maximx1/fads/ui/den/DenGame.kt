@@ -16,4 +16,6 @@ enum class DenGame(
     BACCARAT(Strings.BACCARAT),
     CRAPS(Strings.CRAPS),
     SIC_BO(Strings.SIC_BO),
+    CHUCK_A_LUCK(Strings.CHUCK_A_LUCK),
+    CROWN_AND_ANCHOR(Strings.CROWN_AND_ANCHOR),
 }

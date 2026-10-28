@@ -12,6 +12,7 @@ import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.core.den.Said
 import com.maximx1.fads.core.den.SicBoBet
 import com.maximx1.fads.core.den.SicBoKind
+import com.maximx1.fads.core.den.SymbolDiceGame
 
 /** Every piece of text the game shows, in one place so that it can be translated one day. */
 @Suppress("TooManyFunctions") // One for each piece of text with a number or a name in it.
@@ -87,6 +88,9 @@ internal object Strings {
     const val BACCARAT = "Baccarat"
     const val CRAPS = "Craps"
     const val SIC_BO = "Sic bo"
+    const val CHUCK_A_LUCK = "Chuck-a-luck"
+    const val CROWN_AND_ANCHOR = "Crown and anchor"
+    const val SYMBOL_ODDS = "1 to 1 a die"
     const val ROLL = "Roll"
     const val ON = "ON"
     const val POINT_OFF = "No point yet: bet the line and roll"
@@ -190,6 +194,32 @@ internal object Strings {
     ) = "On each of 5 lines: ${grouped(each)}, ${bronzes(total)} in all"
 
     fun slotResult(won: Long) = if (won > 0) "Won ${bronzes(won)}!" else "No win this time"
+
+    fun symbolDiceName(game: SymbolDiceGame) =
+        if (game ==
+            SymbolDiceGame.CHUCK_A_LUCK
+        ) {
+            CHUCK_A_LUCK
+        } else {
+            CROWN_AND_ANCHOR
+        }
+
+    /** The name of [face] at [game]: its number at chuck-a-luck, its picture's at crown and anchor. */
+    fun faceName(
+        game: SymbolDiceGame,
+        face: Int,
+    ) = if (game ==
+        SymbolDiceGame.CHUCK_A_LUCK
+    ) {
+        "$face"
+    } else {
+        listOf("Crown", "Anchor", "Heart", "Spade", "Diamond", "Club")[
+            face -
+                1,
+        ]
+    }
+
+    fun symbolResult(paid: Long) = if (paid > 0) "Paid ${bronzes(paid)}" else "Nothing back"
 
     fun sicBoBet(bet: SicBoBet) =
         when (bet.kind) {

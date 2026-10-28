@@ -12,10 +12,12 @@ import com.maximx1.fads.core.den.PokerMove
 import com.maximx1.fads.core.den.Room
 import com.maximx1.fads.core.den.SicBoBet
 import com.maximx1.fads.core.den.SlotMachine
+import com.maximx1.fads.core.den.SymbolDiceGame
 import com.maximx1.fads.core.den.baccarat
 import com.maximx1.fads.core.den.betBaccarat
 import com.maximx1.fads.core.den.betCraps
 import com.maximx1.fads.core.den.betSicBo
+import com.maximx1.fads.core.den.betSymbolDice
 import com.maximx1.fads.core.den.blackjack
 import com.maximx1.fads.core.den.botsTurn
 import com.maximx1.fads.core.den.canBetCraps
@@ -26,6 +28,7 @@ import com.maximx1.fads.core.den.clearBaccarat
 import com.maximx1.fads.core.den.clearBets
 import com.maximx1.fads.core.den.clearCraps
 import com.maximx1.fads.core.den.clearSicBo
+import com.maximx1.fads.core.den.clearSymbolDice
 import com.maximx1.fads.core.den.craps
 import com.maximx1.fads.core.den.dealBlackjack
 import com.maximx1.fads.core.den.dealHand
@@ -43,10 +46,12 @@ import com.maximx1.fads.core.den.pullLever
 import com.maximx1.fads.core.den.rebet
 import com.maximx1.fads.core.den.rollDice
 import com.maximx1.fads.core.den.rollSicBo
+import com.maximx1.fads.core.den.rollSymbolDice
 import com.maximx1.fads.core.den.roulette
 import com.maximx1.fads.core.den.sicBo
 import com.maximx1.fads.core.den.sitDown
 import com.maximx1.fads.core.den.spin
+import com.maximx1.fads.core.den.symbolDice
 import com.maximx1.fads.core.den.table
 import com.maximx1.fads.core.den.videoPoker
 import com.maximx1.fads.core.engine.History
@@ -182,6 +187,26 @@ interface DenActions {
 
     /** Throws the three dice at [room]'s sic bo table, if anything is bet. */
     fun rollSicBo(room: Room)
+
+    /** Puts [amount] more bronzes on [face] at [game]'s table in [room]. */
+    fun betSymbolDice(
+        game: SymbolDiceGame,
+        face: Int,
+        amount: Long,
+        room: Room,
+    )
+
+    /** Takes the bets back off [game]'s table in [room]. */
+    fun clearSymbolDice(
+        game: SymbolDiceGame,
+        room: Room,
+    )
+
+    /** Throws the three dice at [game]'s table in [room], if anything is bet. */
+    fun rollSymbolDice(
+        game: SymbolDiceGame,
+        room: Room,
+    )
 
     /** Buys the theme saved as [key] and puts it up, if the purse holds its price. */
     fun buyTheme(key: String)
@@ -354,6 +379,31 @@ class DenViewModel(
 
     override fun rollSicBo(room: Room) =
         change { if (it.sicBo(room).bets.isEmpty()) it else it.rollSicBo(luck(), room) }
+
+    override fun betSymbolDice(
+        game: SymbolDiceGame,
+        face: Int,
+        amount: Long,
+        room: Room,
+    ) = change {
+        if (amount >= room.leastBet &&
+            it.purse.holds(amount)
+        ) {
+            it.betSymbolDice(game, face, amount, room)
+        } else {
+            it
+        }
+    }
+
+    override fun clearSymbolDice(
+        game: SymbolDiceGame,
+        room: Room,
+    ) = change { it.clearSymbolDice(game, room) }
+
+    override fun rollSymbolDice(
+        game: SymbolDiceGame,
+        room: Room,
+    ) = change { if (it.symbolDice(game, room).bets.isEmpty()) it else it.rollSymbolDice(game, luck(), room) }
 
     override fun buyTheme(key: String) =
         change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }
