@@ -84,13 +84,16 @@ class ZoomTest {
         compose.waitForIdle()
     }
 
+    /** A quick drag, a step every frame, that lifts at once, or holds still for [holdMillis] first. */
     private fun drag(
         from: Offset,
         to: Offset,
+        holdMillis: Long = 0,
     ) {
         compose.onRoot().performTouchInput {
             down(from)
             repeat(DRAG_STEPS) { moveBy((to - from) / DRAG_STEPS.toFloat()) }
+            advanceEventTime(holdMillis)
             up()
         }
         compose.waitForIdle()
@@ -128,18 +131,32 @@ class ZoomTest {
         assertEquals(listOf<Move>(Move.ColumnToColumn(0, 4)), moves)
     }
 
-    @Test
-    fun zoomedInOneFingerOnTheBareTablePans() {
+    /** How far the table moves across when a finger on the bare table drags it [by] across, zoomed in. */
+    private fun panAcross(
+        by: Float,
+        holdMillis: Long = 0,
+    ): Float {
         show()
         pinch(from = 400f, to = 600f, x = 0f)
         // A card well in from the left, so it is still in sight once the table moves left under it.
         val card = state.columns[3].last().code
         val before = bounds(card)
         val bare = bareBelow(before)
-        drag(bare, bare - Offset(300f, 0f))
-        val shift = bounds(card).left - before.left
-        assertTrue("moved $shift", shift < -200f && shift >= -300f)
+        drag(bare, bare + Offset(by, 0f), holdMillis)
         assertEquals(emptyList<Move>(), moves)
+        return bounds(card).left - before.left
+    }
+
+    @Test
+    fun zoomedInOneFingerOnTheBareTablePansAndStaysWhereItStops() {
+        val shift = panAcross(-300f, holdMillis = 200)
+        assertTrue("moved $shift", shift < -200f && shift >= -300f)
+    }
+
+    @Test
+    fun aTableThrownGlidesOnAfterTheFingerLifts() {
+        val shift = panAcross(-150f)
+        assertTrue("moved $shift", shift < -250f)
     }
 
     @Test
