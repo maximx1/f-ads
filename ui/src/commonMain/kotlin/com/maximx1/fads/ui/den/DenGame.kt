@@ -10,4 +10,5 @@ enum class DenGame(
     TEXAS_HOLDEM(Strings.TEXAS_HOLDEM),
     ROULETTE(Strings.ROULETTE),
     PLINKO(Strings.PLINKO),
+    SLOTS(Strings.SLOTS),
 }

@@ -76,6 +76,7 @@ internal object Strings {
     const val TEXAS_HOLDEM = "Texas Hold'em"
     const val ROULETTE = "Roulette"
     const val PLINKO = "Plinko"
+    const val SLOTS = "Slot machine"
     const val DROP = "Drop"
     const val SPIN = "Spin"
     const val CLEAR = "Clear"
@@ -164,6 +165,13 @@ internal object Strings {
         colour: String,
         won: Long,
     ) = "$pocket $colour: " + if (won > 0) "won ${bronzes(won)}" else "no win"
+
+    fun lineBet(
+        each: Long,
+        total: Long,
+    ) = "On each of 5 lines: ${grouped(each)}, ${bronzes(total)} in all"
+
+    fun slotResult(won: Long) = if (won > 0) "Won ${bronzes(won)}!" else "No win this time"
 
     fun stakeOf(bronzes: Long) = "Stake: ${bronzes(bronzes)}"
 

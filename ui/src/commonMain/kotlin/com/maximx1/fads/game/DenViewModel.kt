@@ -7,6 +7,7 @@ import com.maximx1.fads.core.den.Den
 import com.maximx1.fads.core.den.PokerGame
 import com.maximx1.fads.core.den.PokerMove
 import com.maximx1.fads.core.den.Room
+import com.maximx1.fads.core.den.SlotMachine
 import com.maximx1.fads.core.den.botsTurn
 import com.maximx1.fads.core.den.canMove
 import com.maximx1.fads.core.den.canRebet
@@ -18,6 +19,7 @@ import com.maximx1.fads.core.den.placeBet
 import com.maximx1.fads.core.den.playBot
 import com.maximx1.fads.core.den.playPoker
 import com.maximx1.fads.core.den.playersTurn
+import com.maximx1.fads.core.den.pullLever
 import com.maximx1.fads.core.den.rebet
 import com.maximx1.fads.core.den.roulette
 import com.maximx1.fads.core.den.sitDown
@@ -85,6 +87,12 @@ interface DenActions {
     /** Drops a ball at [room]'s plinko table with [stake] bronzes on it, if the purse holds that much. */
     fun dropBall(
         stake: Long,
+        room: Room,
+    )
+
+    /** Pulls the lever of [room]'s slot machine with [lineBet] bronzes on each line, if the purse holds them all. */
+    fun pullLever(
+        lineBet: Long,
         room: Room,
     )
 
@@ -188,6 +196,14 @@ class DenViewModel(
         stake: Long,
         room: Room,
     ) = change { if (stake >= room.leastBet && it.purse.holds(stake)) it.dropBall(stake, luck(), room) else it }
+
+    override fun pullLever(
+        lineBet: Long,
+        room: Room,
+    ) = change {
+        val enough = lineBet >= room.leastBet && it.purse.holds(lineBet * SlotMachine.lines.size)
+        if (enough) it.pullLever(lineBet, luck(), room) else it
+    }
 
     override fun buyTheme(key: String) =
         change { if (!it.owns(key) && it.purse.holds(Den.THEME_PRICE)) it.buyTheme(key, Den.THEME_PRICE) else it }

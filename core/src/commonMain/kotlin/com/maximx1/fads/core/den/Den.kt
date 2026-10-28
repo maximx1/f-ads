@@ -24,6 +24,7 @@ data class Den(
     val highDraw: PokerTable? = null,
     val highHoldem: PokerTable? = null,
     val plinkoTables: Map<Room, Plinko> = emptyMap(),
+    val slotMachines: Map<Room, Slots> = emptyMap(),
     val themes: Set<String> = emptySet(),
     val theme: String = HOUSE_THEME,
 ) {
