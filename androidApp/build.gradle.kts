@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Release builds are signed with the upload key named in key.properties (gitignored, repo root).
+// Without that file they fall back to the debug key, so local release builds still work.
+val keystoreProperties =
+    Properties().apply {
+        val file = rootProject.file("key.properties")
+        if (file.exists()) file.inputStream().use { load(it) }
+    }
 
 android {
     namespace = "com.maximx1.fads"
@@ -11,7 +21,8 @@ android {
             .toInt()
 
     defaultConfig {
-        applicationId = "com.maximx1.fads"
+        // The Play Store ID, permanent once uploaded. namespace above is only the code's package.
+        applicationId = "technology.walrath.games.freecell"
         minSdk =
             libs.versions.android.minSdk
                 .get()
@@ -20,8 +31,25 @@ android {
             libs.versions.android.targetSdk
                 .get()
                 .toInt()
-        versionCode = 1
+        versionCode = 2
         versionName = "0.1.0"
+    }
+
+    signingConfigs {
+        if (keystoreProperties.isNotEmpty()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+        }
     }
 
     buildFeatures {

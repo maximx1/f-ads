@@ -22,3 +22,6 @@ captures/
 *.jks
 *.keystore
 keystore.properties
+
+# The upload key settings (see android-releases/02-signing.md)
+key.properties
